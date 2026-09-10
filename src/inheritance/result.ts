@@ -14,6 +14,7 @@ export type EligibleHeir = Candidate & {
 export type AhliWarisResult = {
   anggotaId: string
   hubungan: string
+  kategori: KategoriWaris
   bagian: Fraction
   nominal: number
   alasan: string[]

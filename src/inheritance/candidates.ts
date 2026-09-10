@@ -71,6 +71,12 @@ export function resolveCandidates(
     addCandidate(candidates, added, daughterId, 'FURUDH')
   }
 
+  const cucuPengganti = findCucuPengganti(pewarisId, board, tanggalWarisan)
+  for (const cp of cucuPengganti) {
+    if (!isAlive(cp.cucuId, board, tanggalWarisan)) continue
+    addCandidate(candidates, added, cp.cucuId, 'PENGGANTI')
+  }
+
   const grandsons = findGrandchildrenFromSon(pewarisId, board, tanggalWarisan)
   for (const gcId of grandsons) {
     if (!isAlive(gcId, board, tanggalWarisan)) continue
@@ -135,12 +141,6 @@ export function resolveCandidates(
   for (const pId of paman) {
     if (!isAlive(pId, board, tanggalWarisan)) continue
     addCandidate(candidates, added, pId, 'ASHABAH')
-  }
-
-  const cucuPengganti = findCucuPengganti(pewarisId, board, tanggalWarisan)
-  for (const cp of cucuPengganti) {
-    if (!isAlive(cp.cucuId, board, tanggalWarisan)) continue
-    addCandidate(candidates, added, cp.cucuId, 'PENGGANTI')
   }
 
   return candidates

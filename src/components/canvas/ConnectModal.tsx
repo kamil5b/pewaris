@@ -23,6 +23,7 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
 
   const [tanggalMulai, setTanggalMulai] = useState('')
   const [tanggalMulaiSah, setTanggalMulaiSah] = useState('')
+  const [hasLegalMarriage, setHasLegalMarriage] = useState(false)
   const [isMarried, setIsMarried] = useState(true)
   const [tanggalBerakhir, setTanggalBerakhir] = useState('')
   const [tanggalBerakhirSah, setTanggalBerakhirSah] = useState('')
@@ -45,11 +46,11 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         id: uuidv4(),
         anggotaAId: sourceId,
         anggotaBId: targetId,
-        tanggalMulai: tanggalMulai || null,
-        tanggalMulaiSah: tanggalMulaiSah || null,
-        tanggalBerakhir: isMarried ? null : tanggalBerakhir || null,
-        tanggalBerakhirSah: isMarried ? null : tanggalBerakhirSah || null,
-        jenisAkhir: isMarried ? null : jenisAkhir,
+        tanggalMulai: hasLegalMarriage ? (tanggalMulai || null) : null,
+        tanggalMulaiSah: hasLegalMarriage ? (tanggalMulaiSah || null) : null,
+        tanggalBerakhir: !hasLegalMarriage || isMarried ? null : (tanggalBerakhir || null),
+        tanggalBerakhirSah: !hasLegalMarriage || isMarried ? null : (tanggalBerakhirSah || null),
+        jenisAkhir: !hasLegalMarriage || isMarried ? null : jenisAkhir,
       })
     } else {
       if (!hubunganHorizontalId) return
@@ -67,6 +68,7 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
     setHubunganHorizontalId('')
     setTanggalMulai('')
     setTanggalMulaiSah('')
+    setHasLegalMarriage(false)
     setIsMarried(true)
     setTanggalBerakhir('')
     setTanggalBerakhirSah('')
@@ -135,67 +137,86 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
           {connectionType === 'MARRIAGE' && (
             <>
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai</label>
-                <input
-                  type="date"
-                  value={tanggalMulai}
-                  onChange={(e) => setTanggalMulai(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai Sah</label>
-                <input
-                  type="date"
-                  value={tanggalMulaiSah}
-                  onChange={(e) => setTanggalMulaiSah(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-
-              <div>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={isMarried}
-                    onChange={(e) => setIsMarried(e.target.checked)}
+                    checked={hasLegalMarriage}
+                    onChange={(e) => setHasLegalMarriage(e.target.checked)}
                     className="text-blue-500"
                   />
-                  <span className="text-sm text-gray-600">Masih menikah</span>
+                  <span className="text-sm text-gray-600">Sudah Menikah</span>
                 </label>
+                <p className="text-xs text-gray-400 mt-1">
+                  Jika tidak dicentang, hubungan ini tidak dianggap sebagai pernikahan sah.
+                </p>
               </div>
 
-              {!isMarried && (
+              {hasLegalMarriage && (
                 <>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Jenis Akhir</label>
-                    <select
-                      value={jenisAkhir}
-                      onChange={(e) => setJenisAkhir(e.target.value as JenisAkhir)}
-                      className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="CERAI_HIDUP">Cerai Hidup</option>
-                      <option value="CERAI_MATI">Cerai Mati</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir</label>
+                    <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai</label>
                     <input
                       type="date"
-                      value={tanggalBerakhir}
-                      onChange={(e) => setTanggalBerakhir(e.target.value)}
+                      value={tanggalMulai}
+                      onChange={(e) => setTanggalMulai(e.target.value)}
                       className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir Sah</label>
+                    <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai Sah</label>
                     <input
                       type="date"
-                      value={tanggalBerakhirSah}
-                      onChange={(e) => setTanggalBerakhirSah(e.target.value)}
+                      value={tanggalMulaiSah}
+                      onChange={(e) => setTanggalMulaiSah(e.target.value)}
                       className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isMarried}
+                        onChange={(e) => setIsMarried(e.target.checked)}
+                        className="text-blue-500"
+                      />
+                      <span className="text-sm text-gray-600">Masih menikah</span>
+                    </label>
+                  </div>
+
+                  {!isMarried && (
+                    <>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Jenis Akhir</label>
+                        <select
+                          value={jenisAkhir}
+                          onChange={(e) => setJenisAkhir(e.target.value as JenisAkhir)}
+                          className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="CERAI_HIDUP">Cerai Hidup</option>
+                          <option value="CERAI_MATI">Cerai Mati</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir</label>
+                        <input
+                          type="date"
+                          value={tanggalBerakhir}
+                          onChange={(e) => setTanggalBerakhir(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir Sah</label>
+                        <input
+                          type="date"
+                          value={tanggalBerakhirSah}
+                          onChange={(e) => setTanggalBerakhirSah(e.target.value)}
+                          className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </>
+                  )}
                 </>
               )}
             </>

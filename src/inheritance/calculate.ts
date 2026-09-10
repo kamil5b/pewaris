@@ -24,11 +24,21 @@ import {
   findGrandfather,
   findGrandmothers,
   findPaman,
+  findCucuPengganti,
 } from './relationship'
 
+function genderLabel(base: string, anggotaId: string, facts: BoardData): string {
+  const anggota = facts.anggota.find(a => a.id === anggotaId)
+  return anggota?.gender === 'LAKI_LAKI' ? `${base} Laki-laki` : `${base} Perempuan`
+}
+
 function deriveHubungan(anggotaId: string, facts: BoardData, pewarisId: string, tanggalWarisan: string): string {
+  const pewaris = facts.anggota.find(a => a.id === pewarisId)
+
   const spouses = findSpouses(pewarisId, facts, tanggalWarisan)
-  if (spouses.includes(anggotaId)) return 'Pasangan'
+  if (spouses.includes(anggotaId)) {
+    return pewaris?.gender === 'LAKI_LAKI' ? 'Istri' : 'Suami'
+  }
 
   const sons = findSons(pewarisId, facts, tanggalWarisan)
   if (sons.includes(anggotaId)) return 'Anak Laki-laki'
@@ -42,14 +52,20 @@ function deriveHubungan(anggotaId: string, facts: BoardData, pewarisId: string, 
   const mother = findMother(pewarisId, facts)
   if (mother === anggotaId) return 'Ibu'
 
+  const cucuPengganti = findCucuPengganti(pewarisId, facts, tanggalWarisan)
+  const penggantian = cucuPengganti.find(c => c.cucuId === anggotaId)
+  if (penggantian) {
+    return genderLabel('Cucu', anggotaId, facts) + ' (Pengganti)'
+  }
+
   const sibKandung = findSiblingsKandung(pewarisId, facts)
-  if (sibKandung.includes(anggotaId)) return 'Saudara Kandung'
+  if (sibKandung.includes(anggotaId)) return genderLabel('Saudara Kandung', anggotaId, facts)
 
   const sibSeayah = findSiblingsSeayah(pewarisId, facts)
-  if (sibSeayah.includes(anggotaId)) return 'Saudara Seayah'
+  if (sibSeayah.includes(anggotaId)) return genderLabel('Saudara Seayah', anggotaId, facts)
 
   const sibSeibu = findSiblingsSeibu(pewarisId, facts)
-  if (sibSeibu.includes(anggotaId)) return 'Saudara Seibu'
+  if (sibSeibu.includes(anggotaId)) return genderLabel('Saudara Seibu', anggotaId, facts)
 
   const grandfather = findGrandfather(pewarisId, facts)
   if (grandfather === anggotaId) return 'Kakek'
@@ -188,13 +204,17 @@ export function simulateInheritance(
     }
   }
 
-  const ahliWaris: AhliWarisResult[] = finalShares.map(share => ({
-    anggotaId: share.anggotaId,
-    hubungan: deriveHubungan(share.anggotaId, facts, pewarisId, tanggalWarisan),
-    bagian: share.bagian,
-    nominal: totalHarta * toNumber(share.bagian),
-    alasan: share.alasan,
-  }))
+  const ahliWaris: AhliWarisResult[] = finalShares.map(share => {
+    const heirKategori = finalHeirs.find(h => h.anggotaId === share.anggotaId)?.kategori
+    return {
+      anggotaId: share.anggotaId,
+      hubungan: deriveHubungan(share.anggotaId, facts, pewarisId, tanggalWarisan),
+      kategori: heirKategori ?? 'ASHABAH',
+      bagian: share.bagian,
+      nominal: totalHarta * toNumber(share.bagian),
+      alasan: share.alasan,
+    }
+  })
 
   steps.push({
     langkah: 'Hasil Akhir',

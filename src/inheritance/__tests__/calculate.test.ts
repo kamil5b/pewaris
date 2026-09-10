@@ -61,7 +61,7 @@ describe('simulateInheritance', () => {
     expect(result.pewarisId).toBe('pewaris-1')
     expect(result.hartaWarisanBersih).toBe(1_000_000_000)
 
-    const suami = result.ahliWaris.find(h => h.hubungan === 'Pasangan')
+    const suami = result.ahliWaris.find(h => h.hubungan === 'Suami')
     expect(suami).toBeDefined()
     expect(suami!.bagian.numerator).toBe(1n)
     expect(suami!.bagian.denominator).toBe(4n)
@@ -89,7 +89,7 @@ describe('simulateInheritance', () => {
 
     const result = simulateInheritance(board, { pewarisId: 'pewaris-1', tanggalWarisan: '2024-01-01' })
 
-    const suami = result.ahliWaris.find(h => h.hubungan === 'Pasangan')
+    const suami = result.ahliWaris.find(h => h.hubungan === 'Suami')
     expect(suami).toBeDefined()
     expect(suami!.bagian.numerator).toBe(1n)
     expect(suami!.bagian.denominator).toBe(2n)
@@ -222,6 +222,13 @@ describe('simulateInheritance', () => {
 
     const cucu = result.ahliWaris.find(h => h.anggotaId === 'cucu-1')
     expect(cucu).toBeDefined()
+    expect(cucu!.hubungan).toBe('Cucu Laki-laki (Pengganti)')
+    expect(cucu!.kategori).toBe('PENGGANTI')
+
+    const suami = result.ahliWaris.find(h => h.anggotaId === 'suami-1')
+    expect(suami).toBeDefined()
+    expect(suami!.hubungan).toBe('Suami')
+    expect(suami!.kategori).toBe('FURUDH')
   })
 
   test('adopted child is NOT an heir', () => {
@@ -280,7 +287,7 @@ describe('simulateInheritance', () => {
 
     const result = simulateInheritance(board, { pewarisId: 'pewaris-1', tanggalWarisan: '2024-01-01' })
 
-    const wives = result.ahliWaris.filter(h => h.hubungan === 'Pasangan')
+    const wives = result.ahliWaris.filter(h => h.hubungan === 'Istri')
     expect(wives.length).toBe(2)
 
     for (const w of wives) {

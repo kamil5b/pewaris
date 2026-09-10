@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import type { AhliWarisResult } from '../../inheritance/result'
+import type { AhliWarisResult, KategoriWaris } from '../../inheritance/result'
 import { FractionDisplay } from './FractionDisplay'
 
 type AhliWarisListProps = {
   ahliWaris: AhliWarisResult[]
+}
+
+const kategoriLabel: Record<KategoriWaris, { label: string; cls: string }> = {
+  FURUDH: { label: 'Furudh', cls: 'bg-blue-100 text-blue-700' },
+  ASHABAH: { label: 'Ashabah', cls: 'bg-green-100 text-green-700' },
+  PENGGANTI: { label: 'Pengganti', cls: 'bg-orange-100 text-orange-700' },
 }
 
 export function AhliWarisList({ ahliWaris }: AhliWarisListProps) {
@@ -28,7 +34,12 @@ export function AhliWarisList({ ahliWaris }: AhliWarisListProps) {
             }
           >
             <div>
-              <p className="font-medium">{waris.hubungan}</p>
+              <p className="font-medium flex items-center gap-2">
+                {waris.hubungan}
+                <span className={`text-xs px-2 py-0.5 rounded-full ${kategoriLabel[waris.kategori].cls}`}>
+                  {kategoriLabel[waris.kategori].label}
+                </span>
+              </p>
               <p className="text-sm text-gray-500">
                 <FractionDisplay fraction={waris.bagian} />
                 {' · '}
