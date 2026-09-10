@@ -6,9 +6,16 @@ import { renderFrame, type CanvasRenderState, computeMarriageMidpoint } from '..
 import { autoLayout } from '../../canvas/layout'
 import { screenToCanvas } from '../../canvas/coordinates'
 import { hitTestNode } from '../../canvas/nodes'
+import { hitTestMarriageConnection, hitTestParentChildConnection } from '../../canvas/connections'
 import type { MarriageConnection, ParentChildConnection } from '../../canvas/connections'
 import { ContextMenu } from './ContextMenu'
 import { ConnectModal } from './ConnectModal'
+import { EditConnectionModal } from './EditConnectionModal'
+
+type ConnectionRef = {
+  id: string
+  type: 'HORIZONTAL' | 'VERTICAL'
+}
 
 export function FamilyCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -38,6 +45,7 @@ export function FamilyCanvas() {
     x: number
     y: number
     nodeId: string | null
+    connection: ConnectionRef | null
   } | null>(null)
 
   const [connectModal, setConnectModal] = useState<{
@@ -45,6 +53,12 @@ export function FamilyCanvas() {
     sourceId: string | null
     type: 'MARRIAGE' | 'PARENT_CHILD'
   }>({ isOpen: false, sourceId: null, type: 'MARRIAGE' })
+
+  const [editModal, setEditModal] = useState<{
+    isOpen: boolean
+    hubId: string | null
+    hubType: 'HORIZONTAL' | 'VERTICAL'
+  }>({ isOpen: false, hubId: null, hubType: 'HORIZONTAL' })
 
   const positions = nodePositions.size > 0 ? nodePositions : undefined
   const nodes = autoLayout(anggota, hubunganHorizontal, hubunganVertical, positions)
@@ -188,13 +202,43 @@ export function FamilyCanvas() {
         hitTestNode(canvasPoint.x, canvasPoint.y, node)
       )
 
+      if (clickedNode) {
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          nodeId: clickedNode.id,
+          connection: null,
+        })
+        return
+      }
+
+      const clickedMarriage = marriageConnections.find((conn) =>
+        hitTestMarriageConnection(conn, canvasPoint.x, canvasPoint.y)
+      )
+      if (clickedMarriage) {
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          nodeId: null,
+          connection: { id: clickedMarriage.id, type: 'HORIZONTAL' },
+        })
+        return
+      }
+
+      const clickedVertical = parentChildConnections.find((conn) =>
+        hitTestParentChildConnection(conn, canvasPoint.x, canvasPoint.y)
+      )
+
       setContextMenu({
         x: e.clientX,
         y: e.clientY,
-        nodeId: clickedNode?.id || null,
+        nodeId: null,
+        connection: clickedVertical
+          ? { id: clickedVertical.id, type: 'VERTICAL' }
+          : null,
       })
     },
-    [zoom, panX, panY, nodes]
+    [zoom, panX, panY, nodes, marriageConnections, parentChildConnections]
   )
 
   useEffect(() => {
@@ -274,8 +318,10 @@ export function FamilyCanvas() {
           x={contextMenu.x}
           y={contextMenu.y}
           nodeId={contextMenu.nodeId}
+          connection={contextMenu.connection}
           onClose={() => setContextMenu(null)}
           onConnect={(type) => setConnectModal({ isOpen: true, sourceId: contextMenu.nodeId, type })}
+          onEditConnection={(conn) => setEditModal({ isOpen: true, hubId: conn.id, hubType: conn.type })}
         />
       )}
 
@@ -283,6 +329,14 @@ export function FamilyCanvas() {
         isOpen={connectModal.isOpen}
         onClose={() => setConnectModal({ isOpen: false, sourceId: null, type: 'MARRIAGE' })}
         sourceId={connectModal.sourceId}
+      />
+
+      <EditConnectionModal
+        key={editModal.hubId || 'none'}
+        isOpen={editModal.isOpen}
+        onClose={() => setEditModal({ isOpen: false, hubId: null, hubType: 'HORIZONTAL' })}
+        hubId={editModal.hubId}
+        hubType={editModal.hubType}
       />
     </div>
   )
