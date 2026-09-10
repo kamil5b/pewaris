@@ -5,6 +5,7 @@ import { HartaPanel } from './harta/HartaPanel'
 import { ResultsPanel } from './results/ResultsPanel'
 import { Modal } from './ui/Modal'
 import { TutorialModal } from './ui/TutorialModal'
+import { ImportExport } from './data/ImportExport'
 import { useCanvasStore } from '../store/canvas-store'
 import { useFamilyStore } from '../store/family-store'
 import { useAssetStore } from '../store/asset-store'
@@ -64,7 +65,9 @@ export default function App() {
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-gray-100 rounded-lg">
+            <ImportExport />
+
+            <div className="flex items-center gap-1 bg-gray-100 rounded-lg">
             <button
               onClick={() => setZoom(Math.max(zoom * 0.9, 0.1))}
               className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-200 rounded-l-lg"
