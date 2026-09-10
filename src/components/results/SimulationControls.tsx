@@ -4,9 +4,9 @@ import { useSimulationStore } from '../../store/simulation-store'
 export function SimulationControls() {
   const anggota = useFamilyStore((s) => s.anggota)
   const pewarisId = useSimulationStore((s) => s.pewarisId)
-  const tanggalKematian = useSimulationStore((s) => s.tanggalKematian)
+  const tanggalWarisan = useSimulationStore((s) => s.tanggalWarisan)
   const setPewaris = useSimulationStore((s) => s.setPewaris)
-  const setTanggalKematian = useSimulationStore((s) => s.setTanggalKematian)
+  const setTanggalWarisan = useSimulationStore((s) => s.setTanggalWarisan)
   const calculate = useSimulationStore((s) => s.calculate)
 
   return (
@@ -32,12 +32,12 @@ export function SimulationControls() {
 
         <div>
           <label className="block text-sm text-gray-600 mb-1">
-            Tanggal Kematian
+            Tanggal Warisan
           </label>
           <input
             type="date"
-            value={tanggalKematian}
-            onChange={(e) => setTanggalKematian(e.target.value)}
+            value={tanggalWarisan}
+            onChange={(e) => setTanggalWarisan(e.target.value)}
             className="w-full px-3 py-2 border rounded-lg text-sm"
           />
         </div>

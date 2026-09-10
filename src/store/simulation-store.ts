@@ -6,10 +6,10 @@ import { useAssetStore } from './asset-store'
 
 type SimulationState = {
   pewarisId: string | null
-  tanggalKematian: string
+  tanggalWarisan: string
 
   setPewaris: (id: string | null) => void
-  setTanggalKematian: (date: string) => void
+  setTanggalWarisan: (date: string) => void
 
   result: InheritanceResult | null
   calculate: () => void
@@ -17,15 +17,15 @@ type SimulationState = {
 
 export const useSimulationStore = create<SimulationState>((set) => ({
   pewarisId: null,
-  tanggalKematian: new Date().toISOString().split('T')[0],
+  tanggalWarisan: new Date().toISOString().split('T')[0],
 
   setPewaris: (id) => set({ pewarisId: id }),
-  setTanggalKematian: (date) => set({ tanggalKematian: date }),
+  setTanggalWarisan: (date) => set({ tanggalWarisan: date }),
 
   result: null,
 
   calculate: () => {
-    const { pewarisId, tanggalKematian } = useSimulationStore.getState()
+    const { pewarisId, tanggalWarisan } = useSimulationStore.getState()
     if (!pewarisId) {
       set({ result: null })
       return
@@ -44,7 +44,7 @@ export const useSimulationStore = create<SimulationState>((set) => ({
 
     const context = {
       pewarisId,
-      tanggalKematian,
+      tanggalWarisan,
     }
 
     const result = simulateInheritance(board, context)

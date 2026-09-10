@@ -14,11 +14,11 @@ import { handleRadd } from './radd'
 import { add, toNumber } from '../domain/fraction'
 import { findSpouse, findChildren } from './relationship'
 
-function deriveHubungan(anggotaId: string, facts: BoardData, pewarisId: string, tanggalKematian: string): string {
-  const spouse = findSpouse(pewarisId, facts, tanggalKematian)
+function deriveHubungan(anggotaId: string, facts: BoardData, pewarisId: string, tanggalWarisan: string): string {
+  const spouse = findSpouse(pewarisId, facts, tanggalWarisan)
   if (spouse === anggotaId) return 'Pasangan'
 
-  const children = findChildren(pewarisId, facts)
+  const children = findChildren(pewarisId, facts, tanggalWarisan)
   if (children.includes(anggotaId)) return 'Anak'
 
   return 'Keluarga'
@@ -29,7 +29,7 @@ export function simulateInheritance(
   context: SimulationContext
 ): InheritanceResult {
   const steps: CalculationStep[] = []
-  const { pewarisId, tanggalKematian } = context
+  const { pewarisId, tanggalWarisan } = context
 
   const pewaris = facts.anggota.find(a => a.id === pewarisId)
   if (!pewaris) {
@@ -62,13 +62,13 @@ export function simulateInheritance(
     detail: `Total harta pewaris: Rp ${totalHarta.toLocaleString('id-ID')}`,
   })
 
-  const candidates = resolveCandidates(pewarisId, facts, tanggalKematian)
+  const candidates = resolveCandidates(pewarisId, facts, tanggalWarisan)
   steps.push({
     langkah: 'Tentukan Kandidat',
     detail: `Ditemukan ${candidates.length} kandidat ahli waris`,
   })
 
-  const eligibleHeirs = checkEligibility(candidates, facts, tanggalKematian)
+  const eligibleHeirs = checkEligibility(candidates, facts, tanggalWarisan)
   steps.push({
     langkah: 'Cek Kelayakan',
     detail: `${eligibleHeirs.filter(h => h.isAlive).length} kandidat masih hidup`,
@@ -86,10 +86,10 @@ export function simulateInheritance(
     detail: `${finalHeirs.length} ahli waris final`,
   })
 
-  const pewarisChildren = findChildren(pewarisId, facts, tanggalKematian)
+  const pewarisChildren = findChildren(pewarisId, facts, tanggalWarisan)
   const hasChildren = finalHeirs.some(h => pewarisChildren.includes(h.anggotaId))
 
-  const furudhShares = calculateFurudh(finalHeirs, hasChildren, facts, pewarisId, tanggalKematian)
+  const furudhShares = calculateFurudh(finalHeirs, hasChildren, facts, pewarisId, tanggalWarisan)
   const totalFurudh = calculateTotalFurudh(furudhShares)
   steps.push({
     langkah: 'Hitung Furudh',
@@ -137,7 +137,7 @@ export function simulateInheritance(
         remainder,
         facts,
         pewarisId,
-        tanggalKematian
+        tanggalWarisan
       )
       steps.push({
         langkah: 'Tangani Radd',
@@ -148,7 +148,7 @@ export function simulateInheritance(
 
   const ahliWaris: AhliWarisResult[] = finalShares.map(share => ({
     anggotaId: share.anggotaId,
-    hubungan: deriveHubungan(share.anggotaId, facts, pewarisId, tanggalKematian),
+    hubungan: deriveHubungan(share.anggotaId, facts, pewarisId, tanggalWarisan),
     bagian: share.bagian,
     nominal: totalHarta * toNumber(share.bagian),
     alasan: share.alasan,

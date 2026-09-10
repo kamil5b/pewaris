@@ -47,7 +47,7 @@ export const pemilikHartaSchema = z.object({
 
 export const simulationContextSchema = z.object({
   pewarisId: z.string().uuid(),
-  tanggalKematian: z.string().min(1, 'Tanggal kematian harus diisi'),
+  tanggalWarisan: z.string().min(1, 'Tanggal warisan harus diisi'),
 })
 
 export type AnggotaInput = z.infer<typeof anggotaSchema>

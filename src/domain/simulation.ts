@@ -1,6 +1,6 @@
 export type SimulationContext = {
   pewarisId: string
-  tanggalKematian: string
+  tanggalWarisan: string
 }
 
 export type BoardData = {

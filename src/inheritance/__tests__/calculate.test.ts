@@ -58,7 +58,7 @@ describe('simulateInheritance', () => {
 
     const context: SimulationContext = {
       pewarisId: 'pewaris-1',
-      tanggalKematian: '2024-01-01',
+      tanggalWarisan: '2024-01-01',
     }
 
     const result = simulateInheritance(board, context)
@@ -117,7 +117,7 @@ describe('simulateInheritance', () => {
 
     const context: SimulationContext = {
       pewarisId: 'pewaris-1',
-      tanggalKematian: '2024-01-01',
+      tanggalWarisan: '2024-01-01',
     }
 
     const result = simulateInheritance(board, context)

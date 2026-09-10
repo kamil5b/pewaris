@@ -13,13 +13,13 @@ export function handleRadd(
   remainder: { numerator: bigint; denominator: bigint },
   facts: BoardData,
   pewarisId: string,
-  tanggalKematian: string
+  tanggalWarisan: string
 ): Share[] {
   if (remainder.numerator <= 0n) {
     return furudhShares
   }
 
-  const spouse = findSpouse(pewarisId, facts, tanggalKematian)
+  const spouse = findSpouse(pewarisId, facts, tanggalWarisan)
   const raddEligible = furudhShares.filter(s => s.anggotaId !== spouse)
 
   if (raddEligible.length === 0) {

@@ -18,11 +18,11 @@ export function calculateFurudh(
   hasChildren: boolean,
   facts: BoardData,
   pewarisId: string,
-  tanggalKematian: string
+  tanggalWarisan: string
 ): FurudhShare[] {
   const shares: FurudhShare[] = []
 
-  const spouse = findSpouse(pewarisId, facts, tanggalKematian)
+  const spouse = findSpouse(pewarisId, facts, tanggalWarisan)
   if (!spouse) return shares
 
   const spouseHeir = eligibleHeirs.find(h => h.anggotaId === spouse)
