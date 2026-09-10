@@ -113,7 +113,7 @@ export function simulateInheritance(
     detail: `${eligibleHeirs.filter(h => h.isAlive).length} kandidat masih hidup`,
   })
 
-  const mahjubResults = determineMahjub(eligibleHeirs, facts, pewarisId)
+  const mahjubResults = determineMahjub(eligibleHeirs, facts, pewarisId, tanggalWarisan)
   steps.push({
     langkah: 'Tentukan Mahjub',
     detail: `${mahjubResults.length} kandidat terhalang`,
