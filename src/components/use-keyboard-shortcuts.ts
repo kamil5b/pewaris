@@ -18,16 +18,6 @@ export function useKeyboardShortcuts() {
           // Delete functionality would go here
         }
       }
-
-      if (e.key === '1') {
-        useCanvasStore.getState().setTool('SELECT')
-      }
-      if (e.key === '2') {
-        useCanvasStore.getState().setTool('HAND')
-      }
-      if (e.key === '3') {
-        useCanvasStore.getState().setTool('CONNECT')
-      }
     }
 
     window.addEventListener('keydown', handleKeyDown)

@@ -10,16 +10,18 @@ type ConnectModalProps = {
   isOpen: boolean
   onClose: () => void
   sourceId: string | null
+  initialType?: ConnectionType
+  presetMarriageId?: string | null
 }
 
-export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
+export function ConnectModal({ isOpen, onClose, sourceId, initialType = 'MARRIAGE', presetMarriageId = null }: ConnectModalProps) {
   const anggota = useFamilyStore((s) => s.anggota)
   const addHubunganHorizontal = useFamilyStore((s) => s.addHubunganHorizontal)
   const addHubunganVertical = useFamilyStore((s) => s.addHubunganVertical)
 
-  const [connectionType, setConnectionType] = useState<ConnectionType>('MARRIAGE')
+  const [connectionType, setConnectionType] = useState<ConnectionType>(initialType)
   const [targetId, setTargetId] = useState('')
-  const [hubunganHorizontalId, setHubunganHorizontalId] = useState('')
+  const [hubunganHorizontalId, setHubunganHorizontalId] = useState(presetMarriageId || '')
 
   const [tanggalMulai, setTanggalMulai] = useState('')
   const [tanggalMulaiSah, setTanggalMulaiSah] = useState('')

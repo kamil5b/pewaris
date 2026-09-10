@@ -15,9 +15,23 @@ type ContextMenuProps = {
   onClose: () => void
   onConnect: (type: 'MARRIAGE' | 'PARENT_CHILD') => void
   onEditConnection: (conn: ConnectionRef) => void
+  onAddAnggota: () => void
+  onClearCanvas: () => void
+  onAddChildToMarriage: (marriageId: string) => void
 }
 
-export function ContextMenu({ x, y, nodeId, connection, onClose, onConnect, onEditConnection }: ContextMenuProps) {
+export function ContextMenu({
+  x,
+  y,
+  nodeId,
+  connection,
+  onClose,
+  onConnect,
+  onEditConnection,
+  onAddAnggota,
+  onClearCanvas,
+  onAddChildToMarriage,
+}: ContextMenuProps) {
   const anggota = useFamilyStore((s) => s.anggota)
   const hubunganHorizontal = useFamilyStore((s) => s.hubunganHorizontal)
   const hubunganVertical = useFamilyStore((s) => s.hubunganVertical)
@@ -43,6 +57,8 @@ export function ContextMenu({ x, y, nodeId, connection, onClose, onConnect, onEd
     const anak = anggota.find((x) => x.id === vert.anakId)
     return anak?.nama || ''
   })()
+
+  const menuTitle = node?.nama || (connection ? `🔗 ${connectionName}` : 'Canvas')
 
   const handleDelete = () => {
     if (!nodeId) return
@@ -71,13 +87,41 @@ export function ContextMenu({ x, y, nodeId, connection, onClose, onConnect, onEd
     onClose()
   }
 
-  if (!node && !connection) return null
+  const isBlank = !node && !connection
 
   return (
     <div
       className="fixed bg-white rounded-lg shadow-lg border py-1 z-50"
       style={{ left: x, top: y }}
     >
+      <div className="flex items-center justify-between px-4 pt-1">
+        <span className="text-xs font-semibold text-gray-500 truncate">{menuTitle}</span>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-600 text-sm leading-none"
+          aria-label="Tutup"
+        >
+          ✕
+        </button>
+      </div>
+
+      {isBlank && (
+        <>
+          <button
+            onClick={() => { onAddAnggota(); onClose() }}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            👤 Tambah Anggota
+          </button>
+          <button
+            onClick={() => { onClearCanvas(); onClose() }}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+          >
+            🗑️ Clear Canvas
+          </button>
+        </>
+      )}
+
       {node && (
         <>
           <button
@@ -108,7 +152,31 @@ export function ContextMenu({ x, y, nodeId, connection, onClose, onConnect, onEd
         </>
       )}
 
-      {connection && (
+      {connection && connection.type === 'HORIZONTAL' && (
+        <>
+          <button
+            onClick={() => { onEditConnection(connection); onClose() }}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            ✏️ Edit Hubungan
+          </button>
+          <button
+            onClick={() => { onAddChildToMarriage(connection.id); onClose() }}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100"
+          >
+            👶 Tambah Anak ke Perkawinan Ini
+          </button>
+          <hr className="my-1" />
+          <button
+            onClick={handleDeleteConnection}
+            className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+          >
+            🗑️ Hapus Hubungan
+          </button>
+        </>
+      )}
+
+      {connection && connection.type === 'VERTICAL' && (
         <>
           <button
             onClick={() => { onEditConnection(connection); onClose() }}

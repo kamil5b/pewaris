@@ -17,9 +17,15 @@ type ConnectionRef = {
   type: 'HORIZONTAL' | 'VERTICAL'
 }
 
-export function FamilyCanvas() {
+type FamilyCanvasProps = {
+  onAddAnggota: () => void
+  onClearCanvas: () => void
+}
+
+export function FamilyCanvas({ onAddAnggota, onClearCanvas }: FamilyCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const panningRef = useRef(false)
 
   const anggota = useFamilyStore((s) => s.anggota)
   const hubunganHorizontal = useFamilyStore((s) => s.hubunganHorizontal)
@@ -29,7 +35,6 @@ export function FamilyCanvas() {
   const panX = useCanvasStore((s) => s.panX)
   const panY = useCanvasStore((s) => s.panY)
   const selectedIds = useCanvasStore((s) => s.selectedIds)
-  const activeTool = useCanvasStore((s) => s.activeTool)
   const nodePositions = useCanvasStore((s) => s.nodePositions)
   const draggingNodeId = useCanvasStore((s) => s.draggingNodeId)
   const dragOffset = useCanvasStore((s) => s.dragOffset)
@@ -52,7 +57,8 @@ export function FamilyCanvas() {
     isOpen: boolean
     sourceId: string | null
     type: 'MARRIAGE' | 'PARENT_CHILD'
-  }>({ isOpen: false, sourceId: null, type: 'MARRIAGE' })
+    presetMarriageId: string | null
+  }>({ isOpen: false, sourceId: null, type: 'MARRIAGE', presetMarriageId: null })
 
   const [editModal, setEditModal] = useState<{
     isOpen: boolean
@@ -106,16 +112,29 @@ export function FamilyCanvas() {
   const handleWheel = useCallback(
     (e: WheelEvent) => {
       e.preventDefault()
-      const delta = e.deltaY > 0 ? 0.9 : 1.1
-      const newZoom = Math.min(Math.max(zoom * delta, 0.1), 3)
-      setZoom(newZoom)
+
+      if (e.ctrlKey || e.metaKey) {
+        const delta = e.deltaY > 0 ? 0.9 : 1.1
+        const newZoom = Math.min(Math.max(zoom * delta, 0.1), 3)
+        setZoom(newZoom)
+        return
+      }
+
+      if (e.shiftKey) {
+        setPan(panX - e.deltaY, panY)
+        return
+      }
+
+      setPan(panX - e.deltaX, panY - e.deltaY)
     },
-    [zoom, setZoom]
+    [zoom, panX, panY, setZoom, setPan]
   )
 
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
       if (e.button === 2) return
+
+      setContextMenu(null)
 
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
@@ -129,32 +148,27 @@ export function FamilyCanvas() {
         hitTestNode(canvasPoint.x, canvasPoint.y, node)
       )
 
-      if (activeTool === 'HAND') {
-        return
-      }
-
       if (clickedNode) {
-        if (activeTool === 'SELECT') {
-          if (e.shiftKey) {
-            select(
-              selectedIds.includes(clickedNode.id)
-                ? selectedIds.filter((id) => id !== clickedNode.id)
-                : [...selectedIds, clickedNode.id]
-            )
-          } else {
-            select([clickedNode.id])
-          }
-
-          setDragging(clickedNode.id, {
-            x: canvasPoint.x - clickedNode.x,
-            y: canvasPoint.y - clickedNode.y,
-          })
+        if (e.shiftKey) {
+          select(
+            selectedIds.includes(clickedNode.id)
+              ? selectedIds.filter((id) => id !== clickedNode.id)
+              : [...selectedIds, clickedNode.id]
+          )
+        } else {
+          select([clickedNode.id])
         }
+
+        setDragging(clickedNode.id, {
+          x: canvasPoint.x - clickedNode.x,
+          y: canvasPoint.y - clickedNode.y,
+        })
       } else {
         select([])
+        panningRef.current = true
       }
     },
-    [activeTool, zoom, panX, panY, nodes, selectedIds, select, setDragging]
+    [zoom, panX, panY, nodes, selectedIds, select, setDragging]
   )
 
   const handleMouseMove = useCallback(
@@ -162,15 +176,14 @@ export function FamilyCanvas() {
       const rect = canvasRef.current?.getBoundingClientRect()
       if (!rect) return
 
-      const x = e.clientX - rect.left
-      const y = e.clientY - rect.top
-
-      if (activeTool === 'HAND' && e.buttons === 1) {
+      if (panningRef.current && e.buttons === 1) {
         setPan(panX + e.movementX, panY + e.movementY)
         return
       }
 
       if (draggingNodeId && dragOffset && e.buttons === 1) {
+        const x = e.clientX - rect.left
+        const y = e.clientY - rect.top
         const canvasPoint = screenToCanvas(x, y, { zoom, panX, panY })
         setNodePosition(
           draggingNodeId,
@@ -179,12 +192,67 @@ export function FamilyCanvas() {
         )
       }
     },
-    [activeTool, panX, panY, setPan, draggingNodeId, dragOffset, zoom, setNodePosition]
+    [panX, panY, setPan, draggingNodeId, dragOffset, zoom, setNodePosition]
   )
 
   const handleMouseUp = useCallback(() => {
+    panningRef.current = false
     setDragging(null)
   }, [setDragging])
+
+  const getContextTarget = useCallback(
+    (canvasX: number, canvasY: number): { nodeId: string | null; connection: ConnectionRef | null } => {
+      const clickedNode = nodes.find((node) =>
+        hitTestNode(canvasX, canvasY, node)
+      )
+
+      if (clickedNode) {
+        return { nodeId: clickedNode.id, connection: null }
+      }
+
+      const clickedMarriage = marriageConnections.find((conn) =>
+        hitTestMarriageConnection(conn, canvasX, canvasY)
+      )
+      if (clickedMarriage) {
+        return { nodeId: null, connection: { id: clickedMarriage.id, type: 'HORIZONTAL' } }
+      }
+
+      const clickedVertical = parentChildConnections.find((conn) =>
+        hitTestParentChildConnection(conn, canvasX, canvasY)
+      )
+
+      return {
+        nodeId: null,
+        connection: clickedVertical
+          ? { id: clickedVertical.id, type: 'VERTICAL' }
+          : null,
+      }
+    },
+    [nodes, marriageConnections, parentChildConnections]
+  )
+
+  const handleDblClick = useCallback(
+    (e: MouseEvent) => {
+      const rect = canvasRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const x = e.clientX - rect.left
+      const y = e.clientY - rect.top
+
+      const canvasPoint = screenToCanvas(x, y, { zoom, panX, panY })
+
+      const target = getContextTarget(canvasPoint.x, canvasPoint.y)
+
+      if (target.nodeId || target.connection) {
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          ...target,
+        })
+      }
+    },
+    [zoom, panX, panY, getContextTarget]
+  )
 
   const handleContextMenu = useCallback(
     (e: MouseEvent) => {
@@ -198,47 +266,13 @@ export function FamilyCanvas() {
 
       const canvasPoint = screenToCanvas(x, y, { zoom, panX, panY })
 
-      const clickedNode = nodes.find((node) =>
-        hitTestNode(canvasPoint.x, canvasPoint.y, node)
-      )
-
-      if (clickedNode) {
-        setContextMenu({
-          x: e.clientX,
-          y: e.clientY,
-          nodeId: clickedNode.id,
-          connection: null,
-        })
-        return
-      }
-
-      const clickedMarriage = marriageConnections.find((conn) =>
-        hitTestMarriageConnection(conn, canvasPoint.x, canvasPoint.y)
-      )
-      if (clickedMarriage) {
-        setContextMenu({
-          x: e.clientX,
-          y: e.clientY,
-          nodeId: null,
-          connection: { id: clickedMarriage.id, type: 'HORIZONTAL' },
-        })
-        return
-      }
-
-      const clickedVertical = parentChildConnections.find((conn) =>
-        hitTestParentChildConnection(conn, canvasPoint.x, canvasPoint.y)
-      )
-
       setContextMenu({
         x: e.clientX,
         y: e.clientY,
-        nodeId: null,
-        connection: clickedVertical
-          ? { id: clickedVertical.id, type: 'VERTICAL' }
-          : null,
+        ...getContextTarget(canvasPoint.x, canvasPoint.y),
       })
     },
-    [zoom, panX, panY, nodes, marriageConnections, parentChildConnections]
+    [zoom, panX, panY, getContextTarget]
   )
 
   useEffect(() => {
@@ -249,6 +283,7 @@ export function FamilyCanvas() {
     canvas.addEventListener('mousedown', handleMouseDown)
     canvas.addEventListener('mousemove', handleMouseMove)
     canvas.addEventListener('mouseup', handleMouseUp)
+    canvas.addEventListener('dblclick', handleDblClick)
     canvas.addEventListener('contextmenu', handleContextMenu)
 
     return () => {
@@ -256,9 +291,10 @@ export function FamilyCanvas() {
       canvas.removeEventListener('mousedown', handleMouseDown)
       canvas.removeEventListener('mousemove', handleMouseMove)
       canvas.removeEventListener('mouseup', handleMouseUp)
+      canvas.removeEventListener('dblclick', handleDblClick)
       canvas.removeEventListener('contextmenu', handleContextMenu)
     }
-  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleContextMenu])
+  }, [handleWheel, handleMouseDown, handleMouseMove, handleMouseUp, handleDblClick, handleContextMenu])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -284,11 +320,12 @@ export function FamilyCanvas() {
 
     const ctx = canvas.getContext('2d')
     if (!ctx) return
+    const context = ctx
 
     let animationId: number
 
     function animate() {
-      renderFrame(ctx, renderState)
+      renderFrame(context, renderState)
       animationId = requestAnimationFrame(animate)
     }
 
@@ -301,17 +338,8 @@ export function FamilyCanvas() {
     <div ref={containerRef} className="w-full h-full relative">
       <canvas
         ref={canvasRef}
-        className={`w-full h-full ${
-          activeTool === 'HAND' ? 'cursor-grab' : 
-          activeTool === 'CONNECT' ? 'cursor-crosshair' : 
-          'cursor-default'
-        }`}
+        className="w-full h-full cursor-default"
       />
-      <div className="absolute top-2 left-2 bg-white/90 rounded-lg shadow p-2 text-sm text-gray-500">
-        {activeTool === 'SELECT' ? 'Klik untuk pilih, drag untuk geser' :
-         activeTool === 'HAND' ? 'Drag untuk menggeser canvas' :
-         'Klik anggota untuk menghubungkan'} | Zoom: {Math.round(zoom * 100)}%
-      </div>
 
       {contextMenu && (
         <ContextMenu
@@ -320,15 +348,32 @@ export function FamilyCanvas() {
           nodeId={contextMenu.nodeId}
           connection={contextMenu.connection}
           onClose={() => setContextMenu(null)}
-          onConnect={(type) => setConnectModal({ isOpen: true, sourceId: contextMenu.nodeId, type })}
+          onConnect={(type) =>
+            setConnectModal({ isOpen: true, sourceId: contextMenu.nodeId, type, presetMarriageId: null })
+          }
           onEditConnection={(conn) => setEditModal({ isOpen: true, hubId: conn.id, hubType: conn.type })}
+          onAddAnggota={onAddAnggota}
+          onClearCanvas={onClearCanvas}
+          onAddChildToMarriage={(marriageId) =>
+            setConnectModal({
+              isOpen: true,
+              sourceId: null,
+              type: 'PARENT_CHILD',
+              presetMarriageId: marriageId,
+            })
+          }
         />
       )}
 
       <ConnectModal
+        key={`${connectModal.type}-${connectModal.presetMarriageId ?? 'none'}`}
         isOpen={connectModal.isOpen}
-        onClose={() => setConnectModal({ isOpen: false, sourceId: null, type: 'MARRIAGE' })}
+        onClose={() =>
+          setConnectModal({ isOpen: false, sourceId: null, type: 'MARRIAGE', presetMarriageId: null })
+        }
         sourceId={connectModal.sourceId}
+        initialType={connectModal.type}
+        presetMarriageId={connectModal.presetMarriageId}
       />
 
       <EditConnectionModal
