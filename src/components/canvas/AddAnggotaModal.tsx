@@ -17,11 +17,21 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
   const [tanggalLahir, setTanggalLahir] = useState('')
   const [tanggalKematian, setTanggalKematian] = useState('')
   const [isAlive, setIsAlive] = useState(true)
+  const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!nama.trim() || !tanggalLahir) {
+    if (!nama.trim()) {
+      setError('Nama wajib diisi')
+      return
+    }
+    if (!tanggalLahir) {
+      setError('Tanggal lahir wajib diisi')
+      return
+    }
+    if (!isAlive && !tanggalKematian) {
+      setError('Tanggal kematian wajib diisi')
       return
     }
 
@@ -38,6 +48,7 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
     setTanggalLahir('')
     setTanggalKematian('')
     setIsAlive(true)
+    setError('')
     onClose()
   }
 
@@ -50,7 +61,10 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
             <input
               type="text"
               value={nama}
-              onChange={(e) => setNama(e.target.value)}
+              onChange={(e) => {
+                setNama(e.target.value)
+                setError('')
+              }}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Masukkan nama"
               autoFocus
@@ -90,7 +104,10 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
             <input
               type="date"
               value={tanggalLahir}
-              onChange={(e) => setTanggalLahir(e.target.value)}
+              onChange={(e) => {
+                setTanggalLahir(e.target.value)
+                setError('')
+              }}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
@@ -100,7 +117,10 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
               <input
                 type="checkbox"
                 checked={isAlive}
-                onChange={(e) => setIsAlive(e.target.checked)}
+                onChange={(e) => {
+                  setIsAlive(e.target.checked)
+                  setError('')
+                }}
                 className="text-blue-500"
               />
               <span className="text-sm text-gray-600">Masih hidup</span>
@@ -113,12 +133,21 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
               <input
                 type="date"
                 value={tanggalKematian}
-                onChange={(e) => setTanggalKematian(e.target.value)}
+                onChange={(e) => {
+                  setTanggalKematian(e.target.value)
+                  setError('')
+                }}
                 className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           )}
         </div>
+
+        {error && (
+          <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
 
         <div className="flex gap-2 mt-6">
           <button

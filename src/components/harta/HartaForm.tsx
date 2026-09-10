@@ -13,21 +13,37 @@ export function HartaForm({ onSave, onCancel }: HartaFormProps) {
   const [nama, setNama] = useState('')
   const [nilaiBeli, setNilaiBeli] = useState('')
   const [nilaiSekarang, setNilaiSekarang] = useState('')
+  const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!nama || !nilaiBeli || !nilaiSekarang) {
-      alert('Semua field harus diisi')
+    if (!nama.trim()) {
+      setError('Nama harta wajib diisi')
+      return
+    }
+    if (!nilaiBeli) {
+      setError('Nilai beli wajib diisi')
+      return
+    }
+    if (!nilaiSekarang) {
+      setError('Nilai sekarang wajib diisi')
+      return
+    }
+
+    const beli = Number(nilaiBeli)
+    const sekarang = Number(nilaiSekarang)
+    if (isNaN(beli) || beli <= 0 || isNaN(sekarang) || sekarang <= 0) {
+      setError('Nilai harus berupa angka lebih dari 0')
       return
     }
 
     addHarta({
       id: uuidv4(),
       anggotaId: '',
-      nama,
-      nilaiBeli: Number(nilaiBeli),
-      nilaiSekarang: Number(nilaiSekarang),
+      nama: nama.trim(),
+      nilaiBeli: beli,
+      nilaiSekarang: sekarang,
     })
 
     onSave()
@@ -43,7 +59,10 @@ export function HartaForm({ onSave, onCancel }: HartaFormProps) {
           <input
             type="text"
             value={nama}
-            onChange={(e) => setNama(e.target.value)}
+            onChange={(e) => {
+              setNama(e.target.value)
+              setError('')
+            }}
             className="w-full px-3 py-2 border rounded-lg text-sm"
             placeholder="Contoh: Rumah, Tanah, Mobil"
           />
@@ -54,7 +73,10 @@ export function HartaForm({ onSave, onCancel }: HartaFormProps) {
           <input
             type="number"
             value={nilaiBeli}
-            onChange={(e) => setNilaiBeli(e.target.value)}
+            onChange={(e) => {
+              setNilaiBeli(e.target.value)
+              setError('')
+            }}
             className="w-full px-3 py-2 border rounded-lg text-sm"
             placeholder="0"
           />
@@ -65,12 +87,21 @@ export function HartaForm({ onSave, onCancel }: HartaFormProps) {
           <input
             type="number"
             value={nilaiSekarang}
-            onChange={(e) => setNilaiSekarang(e.target.value)}
+            onChange={(e) => {
+              setNilaiSekarang(e.target.value)
+              setError('')
+            }}
             className="w-full px-3 py-2 border rounded-lg text-sm"
             placeholder="0"
           />
         </div>
       </div>
+
+      {error && (
+        <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {error}
+        </p>
+      )}
 
       <div className="flex gap-2 mt-4">
         <button

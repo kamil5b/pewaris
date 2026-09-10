@@ -55,10 +55,17 @@ export const useFamilyStore = create<FamilyState>((set) => ({
       ),
     })),
 
-  addHubunganHorizontal: (hub) =>
+  addHubunganHorizontal: (hub) => {
+    const hasDuplicate = useFamilyStore.getState().hubunganHorizontal.some(
+      (h) =>
+        (h.anggotaAId === hub.anggotaAId && h.anggotaBId === hub.anggotaBId) ||
+        (h.anggotaAId === hub.anggotaBId && h.anggotaBId === hub.anggotaAId)
+    )
+    if (hasDuplicate) return
     set((state) => ({
       hubunganHorizontal: [...state.hubunganHorizontal, hub],
-    })),
+    }))
+  },
 
   updateHubunganHorizontal: (id, data) =>
     set((state) => ({
@@ -75,10 +82,17 @@ export const useFamilyStore = create<FamilyState>((set) => ({
       ),
     })),
 
-  addHubunganVertical: (hub) =>
+  addHubunganVertical: (hub) => {
+    const hasDuplicate = useFamilyStore.getState().hubunganVertical.some(
+      (v) =>
+        v.anakId === hub.anakId &&
+        v.hubunganHorizontalId === hub.hubunganHorizontalId
+    )
+    if (hasDuplicate) return
     set((state) => ({
       hubunganVertical: [...state.hubunganVertical, hub],
-    })),
+    }))
+  },
 
   updateHubunganVertical: (id, data) =>
     set((state) => ({

@@ -30,6 +30,7 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
   const [jenisAkhir, setJenisAkhir] = useState<JenisAkhir>('CERAI_HIDUP')
   const [isNasabAyah, setIsNasabAyah] = useState(true)
   const [isAdopted, setIsAdopted] = useState(false)
+  const [error, setError] = useState('')
 
   const source = anggota.find((a) => a.id === sourceId)
   const availableTargets = anggota.filter((a) => a.id !== sourceId)
@@ -39,9 +40,17 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!sourceId || !targetId) return
+    if (!sourceId || !targetId) {
+      setError('Anggota tujuan wajib dipilih')
+      return
+    }
 
     if (connectionType === 'MARRIAGE') {
+      if (connectedPartnerIds.includes(targetId)) {
+        setError(`${anggota.find(a => a.id === targetId)?.nama} sudah terhubung sebagai pasangan`)
+        return
+      }
+
       addHubunganHorizontal({
         id: uuidv4(),
         anggotaAId: sourceId,
@@ -53,7 +62,20 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         jenisAkhir: !hasLegalMarriage || isMarried ? null : jenisAkhir,
       })
     } else {
-      if (!hubunganHorizontalId) return
+      if (!hubunganHorizontalId) {
+        setError('Hubungan perkawinan orang tua wajib dipilih')
+        return
+      }
+
+      if (marriages.some(h =>
+        h.id === hubunganHorizontalId &&
+        hubunganVertical.some(v =>
+          v.anakId === targetId && v.hubunganHorizontalId === h.id
+        )
+      )) {
+        setError('Anak sudah terhubung ke perkawinan ini')
+        return
+      }
 
       addHubunganVertical({
         id: uuidv4(),
@@ -75,10 +97,16 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
     setJenisAkhir('CERAI_HIDUP')
     setIsNasabAyah(true)
     setIsAdopted(false)
+    setError('')
     onClose()
   }
 
   const marriages = useFamilyStore((s) => s.hubunganHorizontal)
+  const hubunganVertical = useFamilyStore((s) => s.hubunganVertical)
+
+  const connectedPartnerIds = marriages
+    .filter(h => sourceId && (h.anggotaAId === sourceId || h.anggotaBId === sourceId))
+    .map(h => h.anggotaAId === sourceId ? h.anggotaBId : h.anggotaAId)
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Hubungkan Anggota">
@@ -99,7 +127,10 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
                   name="connectionType"
                   value="MARRIAGE"
                   checked={connectionType === 'MARRIAGE'}
-                  onChange={() => setConnectionType('MARRIAGE')}
+                  onChange={() => {
+                    setConnectionType('MARRIAGE')
+                    setError('')
+                  }}
                 />
                 <span className="text-sm">💍 Perkawinan</span>
               </label>
@@ -109,7 +140,10 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
                   name="connectionType"
                   value="PARENT_CHILD"
                   checked={connectionType === 'PARENT_CHILD'}
-                  onChange={() => setConnectionType('PARENT_CHILD')}
+                  onChange={() => {
+                    setConnectionType('PARENT_CHILD')
+                    setError('')
+                  }}
                 />
                 <span className="text-sm">👶 Anak</span>
               </label>
@@ -122,15 +156,22 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
             </label>
             <select
               value={targetId}
-              onChange={(e) => setTargetId(e.target.value)}
+              onChange={(e) => {
+                setTargetId(e.target.value)
+                setError('')
+              }}
               className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">Pilih...</option>
-              {availableTargets.map((a) => (
-                <option key={a.id} value={a.id}>
-                  {a.nama}
-                </option>
-              ))}
+              {availableTargets.map((a) => {
+                const alreadyConnected = connectionType === 'MARRIAGE' && connectedPartnerIds.includes(a.id)
+                return (
+                  <option key={a.id} value={a.id} disabled={alreadyConnected}>
+                    {a.nama}
+                    {alreadyConnected ? ' (sudah terhubung)' : ''}
+                  </option>
+                )
+              })}
             </select>
           </div>
 
@@ -230,7 +271,10 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
                 </label>
                 <select
                   value={hubunganHorizontalId}
-                  onChange={(e) => setHubunganHorizontalId(e.target.value)}
+                  onChange={(e) => {
+                    setHubunganHorizontalId(e.target.value)
+                    setError('')
+                  }}
                   className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Pilih...</option>
@@ -299,11 +343,16 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
           )}
         </div>
 
+        {error && (
+          <p className="mt-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {error}
+          </p>
+        )}
+
         <div className="flex gap-2 mt-6">
           <button
             type="submit"
-            disabled={!targetId || (connectionType === 'PARENT_CHILD' && !hubunganHorizontalId)}
-            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
           >
             Hubungkan
           </button>
