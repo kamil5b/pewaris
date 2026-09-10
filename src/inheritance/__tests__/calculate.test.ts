@@ -28,13 +28,15 @@ describe('simulateInheritance', () => {
           id: 'vert-1',
           anakId: 'anak-1',
           hubunganHorizontalId: 'hub-1',
-          tanggalLahir: '2012-01-01',
+          isNasabAyah: true,
+          isAdopted: false,
         },
         {
           id: 'vert-2',
           anakId: 'anak-2',
           hubunganHorizontalId: 'hub-1',
-          tanggalLahir: '2014-01-01',
+          isNasabAyah: true,
+          isAdopted: false,
         },
       ],
       harta: [

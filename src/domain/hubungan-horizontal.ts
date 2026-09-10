@@ -4,8 +4,8 @@ export type HubunganHorizontal = {
   id: string
   anggotaAId: string
   anggotaBId: string
-  tanggalMulai: string
-  tanggalMulaiSah: string
+  tanggalMulai: string | null
+  tanggalMulaiSah: string | null
   tanggalBerakhir: string | null
   tanggalBerakhirSah: string | null
   jenisAkhir: JenisAkhir | null

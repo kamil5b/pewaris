@@ -16,8 +16,8 @@ export const hubunganHorizontalSchema = z.object({
   id: z.string().uuid(),
   anggotaAId: z.string().uuid(),
   anggotaBId: z.string().uuid(),
-  tanggalMulai: z.string().min(1, 'Tanggal mulai harus diisi'),
-  tanggalMulaiSah: z.string().min(1, 'Tanggal mulai sah harus diisi'),
+  tanggalMulai: z.string().nullable(),
+  tanggalMulaiSah: z.string().nullable(),
   tanggalBerakhir: z.string().nullable(),
   tanggalBerakhirSah: z.string().nullable(),
   jenisAkhir: jenisAkhirSchema.nullable(),
@@ -27,7 +27,8 @@ export const hubunganVerticalSchema = z.object({
   id: z.string().uuid(),
   anakId: z.string().uuid(),
   hubunganHorizontalId: z.string().uuid(),
-  tanggalLahir: z.string().min(1, 'Tanggal lahir harus diisi'),
+  isNasabAyah: z.boolean(),
+  isAdopted: z.boolean(),
 })
 
 export const hartaSchema = z.object({

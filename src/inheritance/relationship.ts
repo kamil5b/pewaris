@@ -8,7 +8,8 @@ export function findSpouse(
   for (const hub of board.hubunganHorizontal) {
     if (hub.anggotaAId !== anggotaId && hub.anggotaBId !== anggotaId) continue
 
-    const isMarried = hub.tanggalBerakhir === null || hub.tanggalBerakhir > tanggalKematian
+    const isMarried = hub.tanggalMulaiSah !== null
+      && (hub.tanggalBerakhirSah === null || hub.tanggalBerakhirSah > tanggalKematian)
     if (!isMarried) continue
 
     return hub.anggotaAId === anggotaId ? hub.anggotaBId : hub.anggotaAId
@@ -28,7 +29,12 @@ export function findChildren(
 
     const hubChildren = board.hubunganVertical
       .filter(v => v.hubunganHorizontalId === hub.id)
-      .filter(v => !tanggalKematian || v.tanggalLahir <= tanggalKematian)
+      .filter(v => !v.isAdopted)
+      .filter(v => {
+        if (!tanggalKematian) return true
+        const childAnggota = board.anggota.find(a => a.id === v.anakId)
+        return childAnggota && childAnggota.tanggalLahir <= tanggalKematian
+      })
       .map(v => v.anakId)
 
     children.push(...hubChildren)

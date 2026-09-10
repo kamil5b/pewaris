@@ -27,7 +27,8 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
   const [tanggalBerakhir, setTanggalBerakhir] = useState('')
   const [tanggalBerakhirSah, setTanggalBerakhirSah] = useState('')
   const [jenisAkhir, setJenisAkhir] = useState<JenisAkhir>('CERAI_HIDUP')
-  const [tanggalLahirAnak, setTanggalLahirAnak] = useState('')
+  const [isNasabAyah, setIsNasabAyah] = useState(true)
+  const [isAdopted, setIsAdopted] = useState(false)
 
   const source = anggota.find((a) => a.id === sourceId)
   const availableTargets = anggota.filter((a) => a.id !== sourceId)
@@ -44,8 +45,8 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         id: uuidv4(),
         anggotaAId: sourceId,
         anggotaBId: targetId,
-        tanggalMulai: tanggalMulai || today,
-        tanggalMulaiSah: tanggalMulaiSah || today,
+        tanggalMulai: tanggalMulai || null,
+        tanggalMulaiSah: tanggalMulaiSah || null,
         tanggalBerakhir: isMarried ? null : tanggalBerakhir || null,
         tanggalBerakhirSah: isMarried ? null : tanggalBerakhirSah || null,
         jenisAkhir: isMarried ? null : jenisAkhir,
@@ -57,7 +58,8 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         id: uuidv4(),
         anakId: targetId,
         hubunganHorizontalId,
-        tanggalLahir: tanggalLahirAnak || today,
+        isNasabAyah,
+        isAdopted,
       })
     }
 
@@ -69,7 +71,8 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
     setTanggalBerakhir('')
     setTanggalBerakhirSah('')
     setJenisAkhir('CERAI_HIDUP')
-    setTanggalLahirAnak('')
+    setIsNasabAyah(true)
+    setIsAdopted(false)
     onClose()
   }
 
@@ -221,14 +224,55 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
                   })}
                 </select>
               </div>
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">Tanggal Lahir Anak</label>
-                <input
-                  type="date"
-                  value={tanggalLahirAnak}
-                  onChange={(e) => setTanggalLahirAnak(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="space-y-2">
+                {(() => {
+                  const childAnggota = targetId ? anggota.find(a => a.id === targetId) : null
+                  const selectedMarriage = hubunganHorizontalId
+                    ? marriages.find(h => h.id === hubunganHorizontalId)
+                    : null
+
+                  const bornBeforeMarriage = childAnggota && selectedMarriage
+                    && selectedMarriage.tanggalMulaiSah !== null
+                    && childAnggota.tanggalLahir < selectedMarriage.tanggalMulaiSah
+
+                  const hasLegalMarriage = selectedMarriage?.tanggalMulaiSah !== null
+                  const canEditNasab = bornBeforeMarriage
+
+                  if (!canEditNasab && targetId && hubunganHorizontalId) {
+                    if (isNasabAyah !== hasLegalMarriage) setIsNasabAyah(hasLegalMarriage)
+                    if (isAdopted !== false) setIsAdopted(false)
+                  }
+
+                  return (
+                    <>
+                      <label className={`flex items-center gap-2 ${canEditNasab ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                        <input
+                          type="checkbox"
+                          checked={isNasabAyah}
+                          disabled={!canEditNasab}
+                          onChange={(e) => setIsNasabAyah(e.target.checked)}
+                          className="text-blue-500"
+                        />
+                        <span className="text-sm text-gray-600">
+                          Memiliki Hubungan Nasab dengan Ayah
+                          {canEditNasab && (
+                            <span className="text-xs text-gray-400 ml-1">(anak lahir sebelum pernikahan)</span>
+                          )}
+                        </span>
+                      </label>
+                      <label className={`flex items-center gap-2 ${canEditNasab ? 'cursor-pointer' : 'cursor-not-allowed opacity-60'}`}>
+                        <input
+                          type="checkbox"
+                          checked={isAdopted}
+                          disabled={!canEditNasab}
+                          onChange={(e) => setIsAdopted(e.target.checked)}
+                          className="text-blue-500"
+                        />
+                        <span className="text-sm text-gray-600">Anak Angkat</span>
+                      </label>
+                    </>
+                  )
+                })()}
               </div>
             </>
           )}
