@@ -75,7 +75,7 @@ describe('simulateInheritance', () => {
     expect(suami!.bagian.numerator).toBe(1n)
     expect(suami!.bagian.denominator).toBe(4n)
 
-    const anak = result.ahliWaris.filter(h => h.hubungan === 'Anak')
+    const anak = result.ahliWaris.filter(h => h.hubungan.startsWith('Anak'))
     expect(anak.length).toBe(2)
   })
 

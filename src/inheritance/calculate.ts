@@ -12,16 +12,55 @@ import { calculateAshabah } from './ashabah'
 import { handleAwl } from './awl'
 import { handleRadd } from './radd'
 import { add, toNumber } from '../domain/fraction'
-import { findSpouse, findChildren } from './relationship'
+import {
+  findSpouses,
+  findSons,
+  findDaughters,
+  findFather,
+  findMother,
+  findSiblingsKandung,
+  findSiblingsSeayah,
+  findSiblingsSeibu,
+  findGrandfather,
+  findGrandmothers,
+  findPaman,
+} from './relationship'
 
 function deriveHubungan(anggotaId: string, facts: BoardData, pewarisId: string, tanggalWarisan: string): string {
-  const spouse = findSpouse(pewarisId, facts, tanggalWarisan)
-  if (spouse === anggotaId) return 'Pasangan'
+  const spouses = findSpouses(pewarisId, facts, tanggalWarisan)
+  if (spouses.includes(anggotaId)) return 'Pasangan'
 
-  const children = findChildren(pewarisId, facts, tanggalWarisan)
-  if (children.includes(anggotaId)) return 'Anak'
+  const sons = findSons(pewarisId, facts, tanggalWarisan)
+  if (sons.includes(anggotaId)) return 'Anak Laki-laki'
 
-  return 'Keluarga'
+  const daughters = findDaughters(pewarisId, facts, tanggalWarisan)
+  if (daughters.includes(anggotaId)) return 'Anak Perempuan'
+
+  const father = findFather(pewarisId, facts)
+  if (father === anggotaId) return 'Ayah'
+
+  const mother = findMother(pewarisId, facts)
+  if (mother === anggotaId) return 'Ibu'
+
+  const sibKandung = findSiblingsKandung(pewarisId, facts)
+  if (sibKandung.includes(anggotaId)) return 'Saudara Kandung'
+
+  const sibSeayah = findSiblingsSeayah(pewarisId, facts)
+  if (sibSeayah.includes(anggotaId)) return 'Saudara Seayah'
+
+  const sibSeibu = findSiblingsSeibu(pewarisId, facts)
+  if (sibSeibu.includes(anggotaId)) return 'Saudara Seibu'
+
+  const grandfather = findGrandfather(pewarisId, facts)
+  if (grandfather === anggotaId) return 'Kakek'
+
+  const grandmothers = findGrandmothers(pewarisId, facts)
+  if (grandmothers.includes(anggotaId)) return 'Nenek'
+
+  const paman = findPaman(pewarisId, facts)
+  if (paman.includes(anggotaId)) return 'Paman'
+
+  return 'Ahli Waris Lainnya'
 }
 
 export function simulateInheritance(
@@ -86,8 +125,11 @@ export function simulateInheritance(
     detail: `${finalHeirs.length} ahli waris final`,
   })
 
-  const pewarisChildren = findChildren(pewarisId, facts, tanggalWarisan)
-  const hasChildren = finalHeirs.some(h => pewarisChildren.includes(h.anggotaId))
+  const pewarisSons = findSons(pewarisId, facts, tanggalWarisan)
+  const pewarisDaughters = findDaughters(pewarisId, facts, tanggalWarisan)
+  const hasChildren = finalHeirs.some(h =>
+    pewarisSons.includes(h.anggotaId) || pewarisDaughters.includes(h.anggotaId)
+  )
 
   const furudhShares = calculateFurudh(finalHeirs, hasChildren, facts, pewarisId, tanggalWarisan)
   const totalFurudh = calculateTotalFurudh(furudhShares)

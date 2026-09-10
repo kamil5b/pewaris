@@ -1,7 +1,10 @@
 import type { Fraction } from '../domain/fraction'
 
+export type KategoriWaris = 'FURUDH' | 'ASHABAH' | 'PENGGANTI'
+
 export type Candidate = {
   anggotaId: string
+  kategori: KategoriWaris
 }
 
 export type EligibleHeir = Candidate & {
