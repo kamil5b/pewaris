@@ -4,6 +4,8 @@ export type AnggotaNode = {
   id: string
   nama: string
   gender: Gender
+  tanggalLahir: string
+  tanggalKematian: string | null
   x: number
   y: number
   width: number
@@ -11,7 +13,7 @@ export type AnggotaNode = {
 }
 
 const NODE_WIDTH = 120
-const NODE_HEIGHT = 140
+const NODE_HEIGHT = 160
 const NODE_RADIUS = 8
 
 export function drawAnggotaNode(
@@ -20,7 +22,7 @@ export function drawAnggotaNode(
   isSelected: boolean,
   isPewaris: boolean
 ): void {
-  const { x, y, width, height, nama, gender } = node
+  const { x, y, width, height, nama, gender, tanggalLahir, tanggalKematian } = node
 
   ctx.save()
 
@@ -37,6 +39,9 @@ export function drawAnggotaNode(
   if (isPewaris) {
     ctx.fillStyle = '#fef3c7'
     ctx.strokeStyle = '#f59e0b'
+  } else if (tanggalKematian) {
+    ctx.fillStyle = '#f3f4f6'
+    ctx.strokeStyle = '#9ca3af'
   } else if (gender === 'LAKI_LAKI') {
     ctx.fillStyle = '#eff6ff'
     ctx.strokeStyle = isSelected ? '#3b82f6' : '#93c5fd'
@@ -54,24 +59,34 @@ export function drawAnggotaNode(
 
   const centerX = x + width / 2
 
-  ctx.fillStyle = gender === 'LAKI_LAKI' ? '#3b82f6' : '#ec4899'
+  ctx.fillStyle = tanggalKematian ? '#6b7280' : gender === 'LAKI_LAKI' ? '#3b82f6' : '#ec4899'
   ctx.font = 'bold 24px system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(gender === 'LAKI_LAKI' ? '♂' : '♀', centerX, y + 40)
+  ctx.fillText(gender === 'LAKI_LAKI' ? '♂' : '♀', centerX, y + 35)
 
   ctx.fillStyle = '#111827'
   ctx.font = '13px system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
 
-  const maxWidth = width - 16
   const text = nama.length > 12 ? nama.slice(0, 11) + '...' : nama
-  ctx.fillText(text, centerX, y + 80)
+  ctx.fillText(text, centerX, y + 70)
 
   ctx.fillStyle = '#6b7280'
-  ctx.font = '11px system-ui, sans-serif'
-  ctx.fillText(gender === 'LAKI_LAKI' ? 'Laki-laki' : 'Perempuan', centerX, y + 100)
+  ctx.font = '10px system-ui, sans-serif'
+
+  const birthYear = tanggalLahir.split('-')[0]
+  if (tanggalKematian) {
+    const deathYear = tanggalKematian.split('-')[0]
+    ctx.fillText(`${birthYear} - ${deathYear}`, centerX, y + 95)
+  } else {
+    ctx.fillText(`lahir ${birthYear}`, centerX, y + 95)
+  }
+
+  ctx.fillStyle = tanggalKematian ? '#9ca3af' : '#6b7280'
+  ctx.font = '10px system-ui, sans-serif'
+  ctx.fillText(tanggalKematian ? 'Meninggal' : gender === 'LAKI_LAKI' ? 'Laki-laki' : 'Perempuan', centerX, y + 115)
 
   ctx.restore()
 }
@@ -80,6 +95,8 @@ export function createAnggotaNode(
   id: string,
   nama: string,
   gender: Gender,
+  tanggalLahir: string,
+  tanggalKematian: string | null,
   x: number,
   y: number
 ): AnggotaNode {
@@ -87,6 +104,8 @@ export function createAnggotaNode(
     id,
     nama,
     gender,
+    tanggalLahir,
+    tanggalKematian,
     x,
     y,
     width: NODE_WIDTH,

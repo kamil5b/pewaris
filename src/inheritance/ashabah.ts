@@ -1,15 +1,13 @@
+import type { BoardData } from '../domain/simulation'
 import type { EligibleHeir } from './result'
 import {
-  createFraction,
-  add,
   subtract,
   ONE,
-  toNumber,
 } from '../domain/fraction'
+import { findChildren } from './relationship'
 
 type AshabahShare = {
   anggotaId: string
-  hubungan: string
   bagian: { numerator: bigint; denominator: bigint }
   alasan: string[]
 }
@@ -17,7 +15,9 @@ type AshabahShare = {
 export function calculateAshabah(
   eligibleHeirs: EligibleHeir[],
   furudhTotal: { numerator: bigint; denominator: bigint },
-  _totalEstate: number
+  _totalEstate: number,
+  facts: BoardData,
+  pewarisId: string
 ): AshabahShare[] {
   const remainder = subtract(ONE, furudhTotal)
 
@@ -25,73 +25,74 @@ export function calculateAshabah(
     return []
   }
 
-  const children = eligibleHeirs.filter(h =>
-    h.hubungan === 'ANAK_LAKI' || h.hubungan === 'ANAK_PEREMPUAN'
-  )
+  const pewarisChildren = findChildren(pewarisId, facts)
+  const children = eligibleHeirs.filter(h => pewarisChildren.includes(h.anggotaId))
 
   if (children.length === 0) {
     return []
   }
 
-  const sons = children.filter(c => c.hubungan === 'ANAK_LAKI')
-  const daughters = children.filter(c => c.hubungan === 'ANAK_PEREMPUAN')
+  const sonIds = children.filter(c => {
+    const anggota = facts.anggota.find(a => a.id === c.anggotaId)
+    return anggota?.gender === 'LAKI_LAKI'
+  })
+  const daughterIds = children.filter(c => {
+    const anggota = facts.anggota.find(a => a.id === c.anggotaId)
+    return anggota?.gender === 'PEREMPUAN'
+  })
 
   const shares: AshabahShare[] = []
 
-  if (sons.length > 0 && daughters.length > 0) {
-    const totalParts = sons.length * 2 + daughters.length
+  if (sonIds.length > 0 && daughterIds.length > 0) {
+    const totalParts = sonIds.length * 2 + daughterIds.length
     const partValue = {
       numerator: remainder.numerator * 1n,
       denominator: remainder.denominator * BigInt(totalParts),
     }
 
-    for (const son of sons) {
+    for (const son of sonIds) {
       const bagian = {
         numerator: partValue.numerator * 2n,
         denominator: partValue.denominator,
       }
       shares.push({
         anggotaId: son.anggotaId,
-        hubungan: son.hubungan,
         bagian,
         alasan: [`Anak laki-laki mendapat 2/${totalParts} dari sisa`],
       })
     }
 
-    for (const daughter of daughters) {
+    for (const daughter of daughterIds) {
       shares.push({
         anggotaId: daughter.anggotaId,
-        hubungan: daughter.hubungan,
         bagian: partValue,
         alasan: [`Anak perempuan mendapat 1/${totalParts} dari sisa`],
       })
     }
-  } else if (sons.length > 0) {
+  } else if (sonIds.length > 0) {
     const bagian = {
       numerator: remainder.numerator,
-      denominator: remainder.denominator * BigInt(sons.length),
+      denominator: remainder.denominator * BigInt(sonIds.length),
     }
 
-    for (const son of sons) {
+    for (const son of sonIds) {
       shares.push({
         anggotaId: son.anggotaId,
-        hubungan: son.hubungan,
         bagian,
-        alasan: [`Anak laki-laki mendapat 1/${sons.length} dari sisa`],
+        alasan: [`Anak laki-laki mendapat 1/${sonIds.length} dari sisa`],
       })
     }
   } else {
     const bagian = {
       numerator: remainder.numerator,
-      denominator: remainder.denominator * BigInt(daughters.length),
+      denominator: remainder.denominator * BigInt(daughterIds.length),
     }
 
-    for (const daughter of daughters) {
+    for (const daughter of daughterIds) {
       shares.push({
         anggotaId: daughter.anggotaId,
-        hubungan: daughter.hubungan,
         bagian,
-        alasan: [`Anak perempuan mendapat 1/${daughters.length} dari sisa`],
+        alasan: [`Anak perempuan mendapat 1/${daughterIds.length} dari sisa`],
       })
     }
   }

@@ -31,6 +31,8 @@ export function autoLayout(
           anggotaItem.id,
           anggotaItem.nama,
           anggotaItem.gender,
+          anggotaItem.tanggalLahir,
+          anggotaItem.tanggalKematian,
           pos.x,
           pos.y
         )
@@ -51,6 +53,8 @@ export function autoLayout(
     firstAnggota.id,
     firstAnggota.nama,
     firstAnggota.gender,
+    firstAnggota.tanggalLahir,
+    firstAnggota.tanggalKematian,
     centerX - 60,
     centerY
   )
@@ -78,6 +82,8 @@ export function autoLayout(
           spouse.id,
           spouse.nama,
           spouse.gender,
+          spouse.tanggalLahir,
+          spouse.tanggalKematian,
           spouseX,
           centerY
         )
@@ -91,6 +97,8 @@ export function autoLayout(
           spouse.id,
           spouse.nama,
           spouse.gender,
+          spouse.tanggalLahir,
+          spouse.tanggalKematian,
           centerX - NODE_SPACING_X - 60,
           centerY
         )
@@ -120,6 +128,8 @@ export function autoLayout(
             childId,
             childAnggota.nama,
             childAnggota.gender,
+            childAnggota.tanggalLahir,
+            childAnggota.tanggalKematian,
             childX,
             childY
           )
@@ -139,6 +149,8 @@ export function autoLayout(
         anggotaItem.id,
         anggotaItem.nama,
         anggotaItem.gender,
+        anggotaItem.tanggalLahir,
+        anggotaItem.tanggalKematian,
         orphansX,
         centerY
       )

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Modal } from '../ui/Modal'
 import { useFamilyStore } from '../../store/family-store'
 import { v4 as uuidv4 } from 'uuid'
+import type { JenisAkhir } from '../../domain/hubungan-horizontal'
 
 type ConnectionType = 'MARRIAGE' | 'PARENT_CHILD'
 
@@ -20,8 +21,18 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
   const [targetId, setTargetId] = useState('')
   const [hubunganHorizontalId, setHubunganHorizontalId] = useState('')
 
+  const [tanggalMulai, setTanggalMulai] = useState('')
+  const [tanggalMulaiSah, setTanggalMulaiSah] = useState('')
+  const [isMarried, setIsMarried] = useState(true)
+  const [tanggalBerakhir, setTanggalBerakhir] = useState('')
+  const [tanggalBerakhirSah, setTanggalBerakhirSah] = useState('')
+  const [jenisAkhir, setJenisAkhir] = useState<JenisAkhir>('CERAI_HIDUP')
+  const [tanggalLahirAnak, setTanggalLahirAnak] = useState('')
+
   const source = anggota.find((a) => a.id === sourceId)
   const availableTargets = anggota.filter((a) => a.id !== sourceId)
+
+  const today = new Date().toISOString().split('T')[0]
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,11 +44,11 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         id: uuidv4(),
         anggotaAId: sourceId,
         anggotaBId: targetId,
-        tanggalMulai: new Date().toISOString().split('T')[0],
-        tanggalMulaiSah: new Date().toISOString().split('T')[0],
-        tanggalBerakhir: null,
-        tanggalBerakhirSah: null,
-        jenisAkhir: null,
+        tanggalMulai: tanggalMulai || today,
+        tanggalMulaiSah: tanggalMulaiSah || today,
+        tanggalBerakhir: isMarried ? null : tanggalBerakhir || null,
+        tanggalBerakhirSah: isMarried ? null : tanggalBerakhirSah || null,
+        jenisAkhir: isMarried ? null : jenisAkhir,
       })
     } else {
       if (!hubunganHorizontalId) return
@@ -46,12 +57,19 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
         id: uuidv4(),
         anakId: targetId,
         hubunganHorizontalId,
-        tanggalLahir: new Date().toISOString().split('T')[0],
+        tanggalLahir: tanggalLahirAnak || today,
       })
     }
 
     setTargetId('')
     setHubunganHorizontalId('')
+    setTanggalMulai('')
+    setTanggalMulaiSah('')
+    setIsMarried(true)
+    setTanggalBerakhir('')
+    setTanggalBerakhirSah('')
+    setJenisAkhir('CERAI_HIDUP')
+    setTanggalLahirAnak('')
     onClose()
   }
 
@@ -105,34 +123,114 @@ export function ConnectModal({ isOpen, onClose, sourceId }: ConnectModalProps) {
               <option value="">Pilih...</option>
               {availableTargets.map((a) => (
                 <option key={a.id} value={a.id}>
-                  {a.nama} ({a.gender === 'LAKI_LAKI' ? 'L' : 'P'})
+                  {a.nama}
                 </option>
               ))}
             </select>
           </div>
 
+          {connectionType === 'MARRIAGE' && (
+            <>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai</label>
+                <input
+                  type="date"
+                  value={tanggalMulai}
+                  onChange={(e) => setTanggalMulai(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Tanggal Mulai Sah</label>
+                <input
+                  type="date"
+                  value={tanggalMulaiSah}
+                  onChange={(e) => setTanggalMulaiSah(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={isMarried}
+                    onChange={(e) => setIsMarried(e.target.checked)}
+                    className="text-blue-500"
+                  />
+                  <span className="text-sm text-gray-600">Masih menikah</span>
+                </label>
+              </div>
+
+              {!isMarried && (
+                <>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Jenis Akhir</label>
+                    <select
+                      value={jenisAkhir}
+                      onChange={(e) => setJenisAkhir(e.target.value as JenisAkhir)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="CERAI_HIDUP">Cerai Hidup</option>
+                      <option value="CERAI_MATI">Cerai Mati</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir</label>
+                    <input
+                      type="date"
+                      value={tanggalBerakhir}
+                      onChange={(e) => setTanggalBerakhir(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">Tanggal Berakhir Sah</label>
+                    <input
+                      type="date"
+                      value={tanggalBerakhirSah}
+                      onChange={(e) => setTanggalBerakhirSah(e.target.value)}
+                      className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+
           {connectionType === 'PARENT_CHILD' && (
-            <div>
-              <label className="block text-sm text-gray-600 mb-1">
-                Hubungan Perkawinan Orang Tua
-              </label>
-              <select
-                value={hubunganHorizontalId}
-                onChange={(e) => setHubunganHorizontalId(e.target.value)}
-                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Pilih...</option>
-                {marriages.map((hub) => {
-                  const anggotaA = anggota.find((a) => a.id === hub.anggotaAId)
-                  const anggotaB = anggota.find((a) => a.id === hub.anggotaBId)
-                  return (
-                    <option key={hub.id} value={hub.id}>
-                      {anggotaA?.nama} & {anggotaB?.nama}
-                    </option>
-                  )
-                })}
-              </select>
-            </div>
+            <>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">
+                  Hubungan Perkawinan Orang Tua
+                </label>
+                <select
+                  value={hubunganHorizontalId}
+                  onChange={(e) => setHubunganHorizontalId(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Pilih...</option>
+                  {marriages.map((hub) => {
+                    const anggotaA = anggota.find((a) => a.id === hub.anggotaAId)
+                    const anggotaB = anggota.find((a) => a.id === hub.anggotaBId)
+                    return (
+                      <option key={hub.id} value={hub.id}>
+                        {anggotaA?.nama} & {anggotaB?.nama}
+                      </option>
+                    )
+                  })}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm text-gray-600 mb-1">Tanggal Lahir Anak</label>
+                <input
+                  type="date"
+                  value={tanggalLahirAnak}
+                  onChange={(e) => setTanggalLahirAnak(e.target.value)}
+                  className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </>
           )}
         </div>
 

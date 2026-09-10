@@ -6,10 +6,10 @@ describe('simulateInheritance', () => {
   test('basic scenario: pewaris + suami + 2 anak', () => {
     const board: BoardData = {
       anggota: [
-        { id: 'pewaris-1', nama: 'Siti', gender: 'PEREMPUAN' },
-        { id: 'suami-1', nama: 'Ahmad', gender: 'LAKI_LAKI' },
-        { id: 'anak-1', nama: 'Budi', gender: 'LAKI_LAKI' },
-        { id: 'anak-2', nama: 'Dewi', gender: 'PEREMPUAN' },
+        { id: 'pewaris-1', nama: 'Siti', gender: 'PEREMPUAN', tanggalLahir: '1985-01-01', tanggalKematian: null },
+        { id: 'suami-1', nama: 'Ahmad', gender: 'LAKI_LAKI', tanggalLahir: '1983-01-01', tanggalKematian: null },
+        { id: 'anak-1', nama: 'Budi', gender: 'LAKI_LAKI', tanggalLahir: '2012-01-01', tanggalKematian: null },
+        { id: 'anak-2', nama: 'Dewi', gender: 'PEREMPUAN', tanggalLahir: '2014-01-01', tanggalKematian: null },
       ],
       hubunganHorizontal: [
         {
@@ -68,22 +68,20 @@ describe('simulateInheritance', () => {
     expect(result.ahliWaris.length).toBeGreaterThan(0)
     expect(result.calculation.length).toBeGreaterThan(0)
 
-    const suami = result.ahliWaris.find(h => h.hubungan === 'SUAMI')
+    const suami = result.ahliWaris.find(h => h.hubungan === 'Pasangan')
     expect(suami).toBeDefined()
     expect(suami!.bagian.numerator).toBe(1n)
     expect(suami!.bagian.denominator).toBe(4n)
 
-    const anak = result.ahliWaris.filter(h =>
-      h.hubungan === 'ANAK_LAKI' || h.hubungan === 'ANAK_PEREMPUAN'
-    )
+    const anak = result.ahliWaris.filter(h => h.hubungan === 'Anak')
     expect(anak.length).toBe(2)
   })
 
   test('scenario without children', () => {
     const board: BoardData = {
       anggota: [
-        { id: 'pewaris-1', nama: 'Siti', gender: 'PEREMPUAN' },
-        { id: 'suami-1', nama: 'Ahmad', gender: 'LAKI_LAKI' },
+        { id: 'pewaris-1', nama: 'Siti', gender: 'PEREMPUAN', tanggalLahir: '1985-01-01', tanggalKematian: null },
+        { id: 'suami-1', nama: 'Ahmad', gender: 'LAKI_LAKI', tanggalLahir: '1983-01-01', tanggalKematian: null },
       ],
       hubunganHorizontal: [
         {
@@ -124,7 +122,7 @@ describe('simulateInheritance', () => {
 
     const result = simulateInheritance(board, context)
 
-    const suami = result.ahliWaris.find(h => h.hubungan === 'SUAMI')
+    const suami = result.ahliWaris.find(h => h.hubungan === 'Pasangan')
     expect(suami).toBeDefined()
     expect(suami!.bagian.numerator).toBe(1n)
     expect(suami!.bagian.denominator).toBe(2n)

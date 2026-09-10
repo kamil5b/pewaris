@@ -2,7 +2,6 @@ import { add, greaterThan, ONE } from '../domain/fraction'
 
 type Share = {
   anggotaId: string
-  hubungan: string
   bagian: { numerator: bigint; denominator: bigint }
   alasan: string[]
 }

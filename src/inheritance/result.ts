@@ -1,22 +1,7 @@
 import type { Fraction } from '../domain/fraction'
 
-export type RelationshipType =
-  | 'SUAMI'
-  | 'ISTRI'
-  | 'AYAH'
-  | 'IBU'
-  | 'ANAK_LAKI'
-  | 'ANAK_PEREMPUAN'
-  | 'SAUDARA_LAKI'
-  | 'SAUDARA_PEREMPUAN'
-  | 'KAKEK'
-  | 'NENEK'
-  | 'CUCU_LAKI'
-  | 'CUCU_PEREMPUAN'
-
 export type Candidate = {
   anggotaId: string
-  hubungan: RelationshipType
 }
 
 export type EligibleHeir = Candidate & {

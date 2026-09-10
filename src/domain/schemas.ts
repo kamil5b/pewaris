@@ -6,6 +6,8 @@ export const anggotaSchema = z.object({
   id: z.string().uuid(),
   nama: z.string().min(1, 'Nama harus diisi'),
   gender: genderSchema,
+  tanggalLahir: z.string().min(1, 'Tanggal lahir harus diisi'),
+  tanggalKematian: z.string().nullable(),
 })
 
 export const jenisAkhirSchema = z.enum(['CERAI_HIDUP', 'CERAI_MATI'])

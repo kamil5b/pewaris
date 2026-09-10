@@ -1,23 +1,26 @@
-import { add, subtract, ONE } from '../domain/fraction'
+import { add, ONE } from '../domain/fraction'
+import type { BoardData } from '../domain/simulation'
+import { findSpouse } from './relationship'
 
-type FurudhShare = {
+type Share = {
   anggotaId: string
-  hubungan: string
   bagian: { numerator: bigint; denominator: bigint }
   alasan: string[]
 }
 
 export function handleRadd(
-  furudhShares: FurudhShare[],
-  remainder: { numerator: bigint; denominator: bigint }
-): FurudhShare[] {
+  furudhShares: Share[],
+  remainder: { numerator: bigint; denominator: bigint },
+  facts: BoardData,
+  pewarisId: string,
+  tanggalKematian: string
+): Share[] {
   if (remainder.numerator <= 0n) {
     return furudhShares
   }
 
-  const raddEligible = furudhShares.filter(
-    s => s.hubungan !== 'SUAMI' && s.hubungan !== 'ISTRI'
-  )
+  const spouse = findSpouse(pewarisId, facts, tanggalKematian)
+  const raddEligible = furudhShares.filter(s => s.anggotaId !== spouse)
 
   if (raddEligible.length === 0) {
     return furudhShares

@@ -1,75 +1,43 @@
-import type { EligibleHeir, AhliWarisResult } from './result'
+import type { BoardData } from '../domain/simulation'
+import type { EligibleHeir } from './result'
 import {
-  createFraction,
   add,
-  multiply,
-  toNumber,
-  HALF,
   QUARTER,
-  SIXTH,
-  EIGHTH,
-  THIRD,
+  HALF,
 } from '../domain/fraction'
+import { findSpouse } from './relationship'
 
 type FurudhShare = {
   anggotaId: string
-  hubungan: string
   bagian: { numerator: bigint; denominator: bigint }
   alasan: string[]
 }
 
 export function calculateFurudh(
   eligibleHeirs: EligibleHeir[],
-  hasChildren: boolean
+  hasChildren: boolean,
+  facts: BoardData,
+  pewarisId: string,
+  tanggalKematian: string
 ): FurudhShare[] {
   const shares: FurudhShare[] = []
 
-  for (const heir of eligibleHeirs) {
-    let share: { numerator: bigint; denominator: bigint } | null = null
-    let alasan: string[] = []
+  const spouse = findSpouse(pewarisId, facts, tanggalKematian)
+  if (!spouse) return shares
 
-    switch (heir.hubungan) {
-      case 'SUAMI':
-        share = hasChildren ? QUARTER : HALF
-        alasan = hasChildren
-          ? 'Suami mendapat 1/4 karena ada anak'
-          : 'Suami mendapat 1/2 karena tidak ada anak'
-        break
+  const spouseHeir = eligibleHeirs.find(h => h.anggotaId === spouse)
+  if (!spouseHeir || !spouseHeir.isAlive) return shares
 
-      case 'ISTRI':
-        share = hasChildren ? EIGHTH : QUARTER
-        alasan = hasChildren
-          ? 'Istri mendapat 1/8 karena ada anak'
-          : 'Istri mendapat 1/4 karena tidak ada anak'
-        break
+  const share = hasChildren ? QUARTER : HALF
+  const alasan = hasChildren
+    ? ['Pasangan mendapat 1/4 karena ada anak']
+    : ['Pasangan mendapat 1/2 karena tidak ada anak']
 
-      case 'AYAH':
-        if (hasChildren) {
-          share = SIXTH
-          alasan = ['Ayah mendapat 1/6 karena ada anak']
-        }
-        break
-
-      case 'IBU':
-        if (hasChildren) {
-          share = SIXTH
-          alasan = ['Ibu mendapat 1/6 karena ada anak']
-        } else {
-          share = THIRD
-          alasan = ['Ibu mendapat 1/3 karena tidak ada anak']
-        }
-        break
-    }
-
-    if (share) {
-      shares.push({
-        anggotaId: heir.anggotaId,
-        hubungan: heir.hubungan,
-        bagian: share,
-        alasan,
-      })
-    }
-  }
+  shares.push({
+    anggotaId: spouse,
+    bagian: share,
+    alasan,
+  })
 
   return shares
 }

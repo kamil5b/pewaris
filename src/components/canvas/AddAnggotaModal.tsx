@@ -14,11 +14,14 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
 
   const [nama, setNama] = useState('')
   const [gender, setGender] = useState<Gender>('LAKI_LAKI')
+  const [tanggalLahir, setTanggalLahir] = useState('')
+  const [tanggalKematian, setTanggalKematian] = useState('')
+  const [isAlive, setIsAlive] = useState(true)
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!nama.trim()) {
+    if (!nama.trim() || !tanggalLahir) {
       return
     }
 
@@ -26,10 +29,15 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
       id: uuidv4(),
       nama: nama.trim(),
       gender,
+      tanggalLahir,
+      tanggalKematian: isAlive ? null : tanggalKematian || null,
     })
 
     setNama('')
     setGender('LAKI_LAKI')
+    setTanggalLahir('')
+    setTanggalKematian('')
+    setIsAlive(true)
     onClose()
   }
 
@@ -76,6 +84,40 @@ export function AddAnggotaModal({ isOpen, onClose }: AddAnggotaModalProps) {
               </label>
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm text-gray-600 mb-1">Tanggal Lahir</label>
+            <input
+              type="date"
+              value={tanggalLahir}
+              onChange={(e) => setTanggalLahir(e.target.value)}
+              className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isAlive}
+                onChange={(e) => setIsAlive(e.target.checked)}
+                className="text-blue-500"
+              />
+              <span className="text-sm text-gray-600">Masih hidup</span>
+            </label>
+          </div>
+
+          {!isAlive && (
+            <div>
+              <label className="block text-sm text-gray-600 mb-1">Tanggal Kematian</label>
+              <input
+                type="date"
+                value={tanggalKematian}
+                onChange={(e) => setTanggalKematian(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 mt-6">

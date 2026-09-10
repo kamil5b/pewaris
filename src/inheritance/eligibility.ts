@@ -17,11 +17,9 @@ function isAliveAtDeath(
   board: BoardData,
   tanggalKematian: string
 ): boolean {
-  for (const hub of board.hubunganHorizontal) {
-    if (hub.anggotaAId !== anggotaId && hub.anggotaBId !== anggotaId) continue
-    if (hub.jenisAkhir !== 'CERAI_MATI') continue
-    if (!hub.tanggalBerakhir) continue
-    if (hub.tanggalBerakhir <= tanggalKematian) return false
+  const anggota = board.anggota.find(a => a.id === anggotaId)
+  if (anggota?.tanggalKematian) {
+    return anggota.tanggalKematian > tanggalKematian
   }
 
   return true

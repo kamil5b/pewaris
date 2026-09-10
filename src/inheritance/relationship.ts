@@ -1,110 +1,4 @@
 import type { BoardData } from '../domain/simulation'
-import type { RelationshipType } from './result'
-
-export function getRelationship(
-  fromId: string,
-  toId: string,
-  board: BoardData
-): RelationshipType | null {
-  if (fromId === toId) return null
-
-  for (const hub of board.hubunganHorizontal) {
-    const isA = hub.anggotaAId === fromId && hub.anggotaBId === toId
-    const isB = hub.anggotaAId === toId && hub.anggotaBId === fromId
-
-    if (isA || isB) {
-      const isMarried = hub.tanggalBerakhir === null
-      if (isMarried) {
-        return isA ? 'SUAMI' : 'ISTRI'
-      }
-    }
-  }
-
-  for (const vert of board.hubunganVertical) {
-    if (vert.anakId === fromId) {
-      const hub = board.hubunganHorizontal.find(h => h.id === vert.hubunganHorizontalId)
-      if (hub) {
-        if (hub.anggotaAId === toId) return 'ANAK_LAKI'
-        if (hub.anggotaBId === toId) return 'ANAK_PEREMPUAN'
-      }
-    }
-    if (vert.anakId === toId) {
-      const hub = board.hubunganHorizontal.find(h => h.id === vert.hubunganHorizontalId)
-      if (hub) {
-        if (hub.anggotaAId === fromId) return 'AYAH'
-        if (hub.anggotaBId === fromId) return 'IBU'
-      }
-    }
-  }
-
-  const fromParents = findParents(fromId, board)
-  const toParents = findParents(toId, board)
-
-  for (const fp of fromParents) {
-    for (const tp of toParents) {
-      if (fp.hubunganHorizontalId === tp.hubunganHorizontalId && fp.anakId !== tp.anakId) {
-        const fromGender = getGender(fp.anakId, board)
-        return fromGender === 'LAKI' ? 'SAUDARA_LAKI' : 'SAUDARA_PEREMPUAN'
-      }
-    }
-  }
-
-  for (const vert of board.hubunganVertical) {
-    if (vert.anakId === fromId) {
-      const hub = board.hubunganHorizontal.find(h => h.id === vert.hubunganHorizontalId)
-      if (hub) {
-        const parentAChildren = board.hubunganVertical
-          .filter(v => v.hubunganHorizontalId === hub.id && v.anakId !== fromId)
-        
-        for (const sibling of parentAChildren) {
-          const siblingParents = findParents(sibling.anakId, board)
-          for (const sp of siblingParents) {
-            if (sp.anakId === toId) {
-              const gender = getGender(fromId, board)
-              return gender === 'LAKI' ? 'CUCU_LAKI' : 'CUCU_PEREMPUAN'
-            }
-          }
-        }
-      }
-    }
-  }
-
-  for (const vert of board.hubunganVertical) {
-    if (vert.anakId === toId) {
-      const hub = board.hubunganHorizontal.find(h => h.id === vert.hubunganHorizontalId)
-      if (hub) {
-        const parentA = hub.anggotaAId
-        const parentB = hub.anggotaBId
-
-        const grandpaA = findParents(parentA, board)
-        const grandmaA = findParents(parentB, board)
-
-        for (const gp of [...grandpaA, ...grandmaA]) {
-          if (gp.anakId === fromId) {
-            return getGender(fromId, board) === 'LAKI' ? 'KAKEK' : 'NENEK'
-          }
-        }
-      }
-    }
-  }
-
-  return null
-}
-
-function findParents(
-  childId: string,
-  board: BoardData
-): { anakId: string; hubunganHorizontalId: string }[] {
-  return board.hubunganVertical.filter(v => v.anakId === childId)
-}
-
-function getGender(
-  anggotaId: string,
-  board: BoardData
-): 'LAKI' | 'PEREMPUAN' {
-  const anggota = board.anggota.find(a => a.id === anggotaId)
-  return anggota?.gender === 'PEREMPUAN' ? 'PEREMPUAN' : 'LAKI'
-}
 
 export function findSpouse(
   anggotaId: string,
@@ -112,18 +6,20 @@ export function findSpouse(
   tanggalKematian: string
 ): string | null {
   for (const hub of board.hubunganHorizontal) {
-    const isActive = hub.tanggalBerakhir === null || hub.tanggalBerakhir > tanggalKematian
-    if (!isActive) continue
+    if (hub.anggotaAId !== anggotaId && hub.anggotaBId !== anggotaId) continue
 
-    if (hub.anggotaAId === anggotaId) return hub.anggotaBId
-    if (hub.anggotaBId === anggotaId) return hub.anggotaAId
+    const isMarried = hub.tanggalBerakhir === null || hub.tanggalBerakhir > tanggalKematian
+    if (!isMarried) continue
+
+    return hub.anggotaAId === anggotaId ? hub.anggotaBId : hub.anggotaAId
   }
   return null
 }
 
 export function findChildren(
   anggotaId: string,
-  board: BoardData
+  board: BoardData,
+  tanggalKematian?: string
 ): string[] {
   const children: string[] = []
 
@@ -132,6 +28,7 @@ export function findChildren(
 
     const hubChildren = board.hubunganVertical
       .filter(v => v.hubunganHorizontalId === hub.id)
+      .filter(v => !tanggalKematian || v.tanggalLahir <= tanggalKematian)
       .map(v => v.anakId)
 
     children.push(...hubChildren)
@@ -175,4 +72,40 @@ export function findSiblings(
   }
 
   return siblings
+}
+
+export function getRelationship(
+  fromId: string,
+  toId: string,
+  board: BoardData
+): string | null {
+  if (fromId === toId) return null
+
+  const spouse = findSpouse(fromId, board, new Date().toISOString())
+  if (spouse === toId) return 'Pasangan'
+
+  const children = findChildren(fromId, board)
+  if (children.includes(toId)) return 'Anak'
+
+  const parents = findParentsOf(fromId, board)
+  if (parents.ayahId === toId || parents.ibuId === toId) return 'Orang Tua'
+
+  const siblings = findSiblings(fromId, board)
+  if (siblings.includes(toId)) return 'Saudara'
+
+  for (const childId of children) {
+    const grandchildren = findChildren(childId, board)
+    if (grandchildren.includes(toId)) return 'Cucu'
+  }
+
+  if (parents.ayahId) {
+    const grandpa = findParentsOf(parents.ayahId, board)
+    if (grandpa.ayahId === toId || grandpa.ibuId === toId) return 'Kakek/Nenek'
+  }
+  if (parents.ibuId) {
+    const grandma = findParentsOf(parents.ibuId, board)
+    if (grandma.ayahId === toId || grandma.ibuId === toId) return 'Kakek/Nenek'
+  }
+
+  return null
 }
