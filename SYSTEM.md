@@ -62,10 +62,10 @@ type HubunganHorizontal = {
   id: string
   anggotaAId: string
   anggotaBId: string
-  tanggalMulai: string
-  tanggalMulaiSah: string        // Tanggal sah untuk status hukum
+  tanggalMulai: string | null
+  tanggalMulaiSah: string | null      // NULL = tidak sah secara hukum → bukan pasangan
   tanggalBerakhir: string | null
-  tanggalBerakhirSah: string | null  // Tanggal sah untuk status hukum
+  tanggalBerakhirSah: string | null   // Tanggal sah untuk status hukum
   jenisAkhir: JenisAkhir | null  // 'CERAI_HIDUP' | 'CERAI_MATI'
 }
 ```
@@ -78,6 +78,16 @@ type HubunganVertical = {
   hubunganHorizontalId: string
   isNasabAyah: boolean  // apakah anak punya hubungan nasab dengan ayah
   isAdopted: boolean    // apakah anak angkat
+}
+```
+
+### Candidate
+```ts
+type KategoriWaris = 'FURUDH' | 'ASHABAH' | 'PENGGANTI'
+
+type Candidate = {
+  anggotaId: string
+  kategori: KategoriWaris
 }
 ```
 
@@ -120,19 +130,23 @@ All relationships are **derived** from the graph:
 ANGGOTA
    │
    ├── HUBUNGAN_HORIZONTAL (marriage)
-   │   └── findSpouse(id, board, tanggalKematianPewaris) → string | null
+   │   ├── findSpouses(id, board, tanggalKematian) → string[] (poligami)
+   │   └── findSpouse(id, board, tanggalKematian) → string | null
    │
    └── HUBUNGAN_VERTICAL (parent-child)
-       └── findChildren(id, board, tanggalKematianPewaris) → string[]
+       └── findChildren(id, board, tanggalKematian?) → string[]
 ```
 
 From these primitives, derive:
-- **Spouse**: active marriage at tanggalKematianPewaris (using tanggal_mulai_sah / tanggal_berakhir_sah)
-- **Children**: VERTICAL entries where isAdopted=false AND (isNasabAyah=true OR ibu's child)
-- **Parents**: reverse lookup from VERTICAL
-- **Siblings**: share same parents
-- **Grandparents**: parents of parents
-- **Grandchildren**: children of children
+- **Spouse**: active marriage at tanggalKematian (requires `tanggal_mulai_sah !== null`, uses tanggal_mulai_sah / tanggal_berakhir_sah)
+- **Children**: VERTICAL entries where isAdopted=false AND (isNasabAyah=true OR ibu's child); excludes those born after tanggalKematian
+- **Sons / Daughters**: children filtered by gender
+- **Parents**: `findParentsOf` (reverse lookup), `findFather`, `findMother`
+- **Siblings**: `findSiblingsKandung` (ayah+ibu sama), `findSiblingsSeayah`, `findSiblingsSeibu`
+- **Grandparents**: `findGrandfather`, `findGrandmothers`
+- **Grandchildren**: `findGrandchildrenFromSon`, `findGrandchildrenFromDaughter`
+- **Paman**: `findPaman` (saudara laki-laki ayah)
+- **Pengganti**: `findCucuPengganti` (cucu dari anak yang meninggal sebelum pewaris, Pasal 185)
 
 ### Child Inheritance Rules (Business Rules)
 - Anak angkat (isAdopted=true) → bukan ahli waris nasab dari orang tua angkat
@@ -148,11 +162,11 @@ BoardData + SimulationContext (tanggalKematianPewaris)
         │
         ▼
 ┌─────────────────────┐
-│ 1. resolveCandidates│ ← finds all potential heirs from graph
+│ 1. resolveCandidates│ ← resolve semua kandidat dari graph
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 2. checkEligibility │ ← alive at tanggalKematianPewaris? + nasab check
+│ 2. checkEligibility │ ← lahir sebelum tanggal warisan + hidup
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
@@ -160,27 +174,27 @@ BoardData + SimulationContext (tanggalKematianPewaris)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 4. handleReplacement│ ← Pasal 185 (cucu as pengganti)
+│ 4. handleReplacement│ ← Pasal 185 (cucu sebagai pengganti)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 5. classifyHeirs    │ ← furudh, ashabah, pengganti
+│ 5. classifyHeirs    │ ← furudh, ashabah, pengganti (dari kategori)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 6. calculateFurudh  │ ← fixed shares (Pasal 174-177 KHI)
+│ 6. calculateFurudh  │ ← semua bagian tetap (Pasal 174-184 KHI)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 7. calculateAshabah │ ← residue distribution (2:1 male:female)
+│ 7. calculateAshabah │ ← distribusi sisa (prioritas KHI, 2:1)
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 8. handleAwl        │ ← proportional reduction if total > 1
+│ 8. handleAwl        │ ← pengurangan proporsional jika total > 1
 └──────────┬──────────┘
            ▼
 ┌─────────────────────┐
-│ 9. handleRadd       │ ← return remainder to furudh heirs
+│ 9. handleRadd       │ ← kembalikan sisa ke furudh non-pasangan
 └──────────┬──────────┘
            ▼
      InheritanceResult
@@ -189,12 +203,13 @@ BoardData + SimulationContext (tanggalKematianPewaris)
 ## Key Rules
 
 ### Marriage Timeline
-- Marriage is active if: `tanggalBerakhirSah === null || tanggalBerakhirSah > tanggalKematianPewaris`
+- Pasangan aktif jika: `tanggalMulaiSah !== null && (tanggalBerakhirSah === null || tanggalBerakhirSah > tanggalKematianPewaris)`
+- Jika `tanggalMulaiSah === null` → pernikahan tidak sah → **bukan pasangan**, dan **`isNasabAyah` otomatis false**
 - Status hukum ditentukan oleh **tanggal sah**, bukan tanggal faktual
 
 ### Eligibility (Pasal 172-173 KHI)
-- Ada hubungan darah atau perkawinan dengan pewaris
-- Masih hidup pada saat pewaris meninggal
+- Lahir sebelum tanggal kematian pewaris (`tanggalLahir <= tanggalWarisan`)
+- Masih hidup saat pewaris meninggal (`tanggalKematian > tanggalWarisan` atau NULL)
 - Beragama Islam (pewaris maupun ahli waris)
 - Tidak ada sebab penghalang (mahjub)
 
@@ -214,27 +229,58 @@ BoardData + SimulationContext (tanggalKematianPewaris)
 - Bagian pengganti tidak boleh melebihi bagian ahli waris yang sederajat
 - Masih dalam perdebatan interpretasi hukum
 
-### Furudh Shares (Pasal 174-177 KHI)
-- Suami with children: 1/4
-- Suami without children: 1/2
-- Istri with children: 1/8
-- Istri without children: 1/4
-- Ayah with children: 1/6
-- Ibu with children: 1/6
-- Ibu without children: 1/3
+### Furudh Shares (Pasal 174-184 KHI)
 
-### Ashabah Shares
-- Children split remainder
-- Male:Female ratio = 2:1
+| Ahli Waris | Kondisi | Bagian |
+|-----------|---------|--------|
+| Suami | Ada anak/pengganti | 1/4 |
+| Suami | Tidak ada anak/pengganti | 1/2 |
+| Istri (banyak) | Ada anak/pengganti | 1/4 ÷ jumlah istri |
+| Istri (banyak) | Tidak ada anak/pengganti | 1/2 ÷ jumlah istri |
+| Ayah | Ada anak | 1/6 |
+| Ayah | Tidak ada anak | 1/3 |
+| Ibu | Ada anak (1+) | 1/6 |
+| Ibu | Tidak ada anak | 1/3 |
+| Anak perempuan 1 | Tidak ada anak laki-laki | 1/2 |
+| Anak perempuan 2+ | Tidak ada anak laki-laki | 2/3 total |
+| Cucu perempuan 1 | Tanpa cucu laki-laki | 1/6 |
+| Cucu perempuan 2+ | Tanpa cucu laki-laki | 1/3 total |
+| Saudara kandung perempuan 1 | Tanpa anak | 1/2 |
+| Saudara kandung perempuan 2+ | Tanpa anak | 2/3 total |
+| Saudara seayah perempuan 1 | Tanpa anak + tanpa kandung perempuan | 1/2 |
+| Saudara seayah perempuan 2+ | Tanpa anak + tanpa kandung perempuan | 2/3 total |
+| Saudara seibu (1) | Tanpa anak | 1/6 |
+| Saudara seibu (2+) | Tanpa anak | 1/3 total |
+| Kakek | Selalu (bila tidak mahjub) | 1/6 |
+| Nenek (garis ayah) | Ada anak | 1/6 |
+| Nenek (garis ayah) | Tidak ada anak | 1/3 |
+| Nenek (garis ibu) | Selalu | 1/6 |
+
+**Catatan Poligami:** Bagian istri dibagi proporsional sesuai jumlah istri aktif. Contoh: 2 istri + anak → masing-masing 1/8.
+
+### Ashabah (Urutan Prioritas)
+1. Anak laki-laki (+ anak perempuan, rasio 2:1)
+2. Cucu laki-laki dari anak laki-laki (pengganti)
+3. Saudara laki-laki kandung
+4. Saudara laki-laki seayah
+5. Paman
+
+### Mahjub (Pasal 186 KHI)
+| Pemahjub | Yang Terhalang |
+|----------|---------------|
+| Anak laki-laki | Cucu perempuan, saudara, kakek, nenek, saudara seibu |
+| Anak pewaris | Cucu perempuan |
+| Saudara kandung laki-laki | Saudara seayah, kakek |
+| Saudara kandung perempuan | Saudara seayah perempuan |
+| Suami/Istri | Kakek, nenek |
+| Saudara seayah laki-laki | Kakek |
+| Nenek garis ayah | Nenek garis lainnya |
+
+**Catatan:** Anak perempuan **tidak** mahjub oleh anak laki-laki — keduanya tetap menerima bagian melalui ashabah (2:1).
 
 ### Tirkah (Harta Warisan)
 - Objek waris adalah tirkah (harta peninggalan yang benar-benar menjadi milik pewaris)
 - Bukan sekadar nilai aset
-
-**TODO (MVP nanti):**
-- Hutang pewaris perlu dikurangkan dari tirkah sebelum dibagi
-- Wasiat perlu di-handle (batas 1/3 dari tirkah, Pasal 200)
-- Wasiat wajibah anak angkat perlu di-handle (Pasal 209, batas 1/3)
 
 **TODO (MVP nanti):**
 - Hutang pewaris perlu dikurangkan dari tirkah sebelum dibagi
@@ -312,12 +358,10 @@ IndexedDB (auto-save)
 5. No export/import UI buttons
 6. No GitHub Actions workflow
 7. Harta ownership UI incomplete (no PemilikHarta editor)
-8. Tests minimal (only 2 integration test cases)
-9. **Ahli waris pengganti (Pasal 185) belum diimplementasi**
-10. **Rule mahjub belum lengkap sesuai KHI**
-11. **Daftar ahli waris belum lengkap sesuai klasifikasi KHI**
-12. **Perlu tabel seluruh calon ahli waris + syarat + bagian + mahjub + rule pengganti**
-13. **Poligami belum di-handle (bagian istri dibagi proporsional)**
-14. **Anak angkat belum di-handle (wasiat wajibah Pasal 209 perlu diimplementasi nanti)**
-15. **Hutang pewaris belum di-handle (perlu dikurangkan dari tirkah sebelum dibagi)**
-16. **Wasiat belum di-handle (batas 1/3 dari tirkah, Pasal 200)**
+8. **Pasal 185 (ahli waris pengganti)**: teratasi di kandidat, tetapi batasan bagian pengganti masih perlu divalidasi lebih lanjut
+9. **Hutang pewaris belum di-handle** (perlu dikurangkan dari tirkah sebelum dibagi)
+10. **Wasiat belum di-handle** (batas 1/3 dari tirkah, Pasal 200)
+11. **Wasiat wajibah anak angkat belum di-handle** (Pasal 209, batas 1/3)
+12. **Anak angkat dimodelkan non-nasab** — belum ada wasiat wajibah engine
+13. **Mahjub belum selengkap tabel KHI** — masih fokus pada inti kasus umum
+14. **Cucu laki-laki dari anak perempuan** belum diterapkan sebagai pengganti (hanya dari anak laki-laki)

@@ -4,12 +4,80 @@ import {
   subtract,
   ONE,
 } from '../domain/fraction'
-import { findChildren } from './relationship'
+import type { Fraction } from '../domain/fraction'
+import {
+  findSons,
+  findDaughters,
+  findGrandchildrenFromSon,
+  findSiblingsKandung,
+  findSiblingsSeayah,
+  findPaman,
+} from './relationship'
 
-type AshabahShare = {
+export type AshabahShare = {
   anggotaId: string
-  bagian: { numerator: bigint; denominator: bigint }
+  bagian: Fraction
   alasan: string[]
+}
+
+type AshabahPriority = {
+  anggotaIds: string[]
+  level: string
+}
+
+function getAshabahPriority(
+  pewarisId: string,
+  facts: BoardData,
+  tanggalWarisan: string,
+  eligibleIds: Set<string>
+): AshabahPriority[] {
+  const priorities: AshabahPriority[] = []
+
+  const sons = findSons(pewarisId, facts, tanggalWarisan)
+    .filter(id => eligibleIds.has(id))
+  const daughters = findDaughters(pewarisId, facts, tanggalWarisan)
+    .filter(id => eligibleIds.has(id))
+
+  if (sons.length > 0) {
+    const allChildren = [...sons, ...daughters]
+    priorities.push({ anggotaIds: allChildren, level: 'Anak' })
+    return priorities
+  }
+
+  const grandsons = findGrandchildrenFromSon(pewarisId, facts, tanggalWarisan)
+    .filter(id => eligibleIds.has(id))
+  if (grandsons.length > 0) {
+    priorities.push({ anggotaIds: grandsons, level: 'Cucu laki-laki (pengganti)' })
+    return priorities
+  }
+
+  const siblingsKandungLaki = findSiblingsKandung(pewarisId, facts)
+    .filter(id => {
+      const a = facts.anggota.find(x => x.id === id)
+      return a?.gender === 'LAKI_LAKI' && eligibleIds.has(id)
+    })
+  if (siblingsKandungLaki.length > 0) {
+    priorities.push({ anggotaIds: siblingsKandungLaki, level: 'Saudara kandung laki-laki' })
+    return priorities
+  }
+
+  const siblingsSeayahLaki = findSiblingsSeayah(pewarisId, facts)
+    .filter(id => {
+      const a = facts.anggota.find(x => x.id === id)
+      return a?.gender === 'LAKI_LAKI' && eligibleIds.has(id)
+    })
+  if (siblingsSeayahLaki.length > 0) {
+    priorities.push({ anggotaIds: siblingsSeayahLaki, level: 'Saudara seayah laki-laki' })
+    return priorities
+  }
+
+  const paman = findPaman(pewarisId, facts)
+    .filter(id => eligibleIds.has(id))
+  if (paman.length > 0) {
+    priorities.push({ anggotaIds: paman, level: 'Paman' })
+  }
+
+  return priorities
 }
 
 export function calculateAshabah(
@@ -17,7 +85,8 @@ export function calculateAshabah(
   furudhTotal: { numerator: bigint; denominator: bigint },
   _totalEstate: number,
   facts: BoardData,
-  pewarisId: string
+  pewarisId: string,
+  tanggalWarisan: string
 ): AshabahShare[] {
   const remainder = subtract(ONE, furudhTotal)
 
@@ -25,75 +94,71 @@ export function calculateAshabah(
     return []
   }
 
-  const pewarisChildren = findChildren(pewarisId, facts)
-  const children = eligibleHeirs.filter(h => pewarisChildren.includes(h.anggotaId))
+  const eligibleIds = new Set(eligibleHeirs.filter(h => h.isAlive).map(h => h.anggotaId))
+  const priorities = getAshabahPriority(pewarisId, facts, tanggalWarisan, eligibleIds)
 
-  if (children.length === 0) {
+  if (priorities.length === 0) {
     return []
   }
 
-  const sonIds = children.filter(c => {
-    const anggota = facts.anggota.find(a => a.id === c.anggotaId)
-    return anggota?.gender === 'LAKI_LAKI'
-  })
-  const daughterIds = children.filter(c => {
-    const anggota = facts.anggota.find(a => a.id === c.anggotaId)
-    return anggota?.gender === 'PEREMPUAN'
-  })
-
+  const firstPriority = priorities[0]
   const shares: AshabahShare[] = []
 
-  if (sonIds.length > 0 && daughterIds.length > 0) {
-    const totalParts = sonIds.length * 2 + daughterIds.length
-    const partValue = {
-      numerator: remainder.numerator * 1n,
-      denominator: remainder.denominator * BigInt(totalParts),
-    }
-
-    for (const son of sonIds) {
-      const bagian = {
-        numerator: partValue.numerator * 2n,
-        denominator: partValue.denominator,
-      }
-      shares.push({
-        anggotaId: son.anggotaId,
-        bagian,
-        alasan: [`Anak laki-laki mendapat 2/${totalParts} dari sisa`],
-      })
-    }
-
-    for (const daughter of daughterIds) {
-      shares.push({
-        anggotaId: daughter.anggotaId,
-        bagian: partValue,
-        alasan: [`Anak perempuan mendapat 1/${totalParts} dari sisa`],
-      })
-    }
-  } else if (sonIds.length > 0) {
-    const bagian = {
-      numerator: remainder.numerator,
-      denominator: remainder.denominator * BigInt(sonIds.length),
-    }
-
-    for (const son of sonIds) {
-      shares.push({
-        anggotaId: son.anggotaId,
-        bagian,
-        alasan: [`Anak laki-laki mendapat 1/${sonIds.length} dari sisa`],
-      })
-    }
+  if (firstPriority.anggotaIds.length === 1) {
+    shares.push({
+      anggotaId: firstPriority.anggotaIds[0],
+      bagian: remainder,
+      alasan: [`${firstPriority.level} mendapat seluruh sisa`],
+    })
   } else {
-    const bagian = {
-      numerator: remainder.numerator,
-      denominator: remainder.denominator * BigInt(daughterIds.length),
-    }
+    const eligibleSonCount = firstPriority.anggotaIds.filter(id => {
+      const a = facts.anggota.find(x => x.id === id)
+      return a?.gender === 'LAKI_LAKI'
+    }).length
+    const eligibleDaughterCount = firstPriority.anggotaIds.filter(id => {
+      const a = facts.anggota.find(x => x.id === id)
+      return a?.gender === 'PEREMPUAN'
+    }).length
 
-    for (const daughter of daughterIds) {
-      shares.push({
-        anggotaId: daughter.anggotaId,
-        bagian,
-        alasan: [`Anak perempuan mendapat 1/${daughterIds.length} dari sisa`],
-      })
+    if (eligibleSonCount > 0 && eligibleDaughterCount > 0) {
+      const totalParts = eligibleSonCount * 2 + eligibleDaughterCount
+      const partValue: Fraction = {
+        numerator: remainder.numerator,
+        denominator: remainder.denominator * BigInt(totalParts),
+      }
+
+      for (const id of firstPriority.anggotaIds) {
+        const a = facts.anggota.find(x => x.id === id)
+        if (a?.gender === 'LAKI_LAKI') {
+          shares.push({
+            anggotaId: id,
+            bagian: {
+              numerator: partValue.numerator * 2n,
+              denominator: partValue.denominator,
+            },
+            alasan: [`Anak laki-laki mendapat 2/${totalParts} dari sisa`],
+          })
+        } else {
+          shares.push({
+            anggotaId: id,
+            bagian: partValue,
+            alasan: [`Anak perempuan mendapat 1/${totalParts} dari sisa`],
+          })
+        }
+      }
+    } else {
+      const share: Fraction = {
+        numerator: remainder.numerator,
+        denominator: remainder.denominator * BigInt(firstPriority.anggotaIds.length),
+      }
+
+      for (const id of firstPriority.anggotaIds) {
+        shares.push({
+          anggotaId: id,
+          bagian: share,
+          alasan: [`${firstPriority.level} mendapat 1/${firstPriority.anggotaIds.length} dari sisa`],
+        })
+      }
     }
   }
 

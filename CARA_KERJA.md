@@ -66,7 +66,9 @@ HUBUNGAN_HORIZONTAL (perkawinan)
 
 HUBUNGAN_VERTICAL (anak)
     ├── Anak ID
-    └── Hubungan Perkawinan Orang Tua ID
+    ├── Hubungan Perkawinan Orang Tua ID
+    ├── Hubungan Nasab dengan Ayah (Ya / Tidak)
+    └── Anak Angkat (Ya / Tidak)
 
 HARTA (barang)
     ├── Pemilik Awal ID
@@ -212,19 +214,36 @@ TIRKAH (Harta Waris Bersih)
 |------------|---------|--------|
 | Suami | Ada anak | 1/4 |
 | Suami | Tidak ada anak | 1/2 |
-| Istri | Ada anak | 1/8 |
-| Istri | Tidak ada anak | 1/4 |
+| Istri | Ada anak (dibagi jumlah istri) | 1/4 ÷ n |
+| Istri | Tidak ada anak (dibagi jumlah istri) | 1/2 ÷ n |
 | Ayah | Ada anak | 1/6 |
+| Ayah | Tidak ada anak | 1/3 |
 | Ibu | Ada anak | 1/6 |
 | Ibu | Tidak ada anak | 1/3 |
+| Anak perempuan 1 orang | Tidak ada anak laki-laki | 1/2 |
+| Anak perempuan 2+ | Tidak ada anak laki-laki | 2/3 total |
+| Cucu perempuan 1 | Tanpa cucu laki-laki | 1/6 |
+| Cucu perempuan 2+ | Tanpa cucu laki-laki | 1/3 total |
+| Saudara kandung perempuan 1 | Tanpa anak | 1/2 |
+| Saudara kandung perempuan 2+ | Tanpa anak | 2/3 total |
+| Saudara seayah perempuan 1 | Tanpa anak + tanpa kandung perempuan | 1/2 |
+| Saudara seayah perempuan 2+ | Tanpa anak + tanpa kandung perempuan | 2/3 total |
+| Saudara seibu (1) | Tanpa anak | 1/6 |
+| Saudara seibu (2+) | Tanpa anak | 1/3 total |
+| Kakek | Selalu (bila tidak terhalang) | 1/6 |
+| Nenek | Sesuai garis | 1/6 atau 1/3 |
 
 ### Ashabah (Bagian Sisa)
 
-Jika ada anak yang berhak, sisa harta dibagikan:
-- Anak laki-laki mendapat **2 bagian**
-- Anak perempuan mendapat **1 bagian**
+Sisa harta setelah dikurangi furudh dibagikan kepada **ahli waris ashabah** berdasarkan urutan prioritas:
 
-Contoh: Jika ada 1 anak laki-laki dan 1 anak perempuan:
+1. **Anak laki-laki** (bersama anak perempuan, rasio 2:1)
+2. **Cucu laki-laki** dari anak laki-laki (pengganti)
+3. **Saudara laki-laki kandung**
+4. **Saudara laki-laki seayah**
+5. **Paman**
+
+Contoh: Jika ada 1 anak laki-laki dan 1 anak perempuan yang berbagi sisa:
 - Total bagian = 2 + 1 = 3
 - Anak laki-laki mendapat 2/3 dari sisa
 - Anak perempuan mendapat 1/3 dari sisa

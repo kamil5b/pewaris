@@ -1,3 +1,5 @@
+> **✅ Status: seluruh revisi di bawah sudah diimplementasikan** dalam inheritance engine (`src/inheritance/*`, 36 test pass). Mulai 2026-06, domain model sudah menggunakan `tanggal_mulai_sah`/`tanggal_berakhir_sah` (nullable) untuk status hukum, `is_nasab_ayah`/`is_adopted` di `HUBUNGAN_VERTICAL`, dan `tanggal_waris` sebagai parameter perhitungan (`SimulationContext`).
+
 ada beberapa revisi yang menurut gue **wajib** sebelum dokumen itu dijadikan dasar development.
 
 ### Yang paling penting

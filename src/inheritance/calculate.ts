@@ -131,14 +131,14 @@ export function simulateInheritance(
     pewarisSons.includes(h.anggotaId) || pewarisDaughters.includes(h.anggotaId)
   )
 
-  const furudhShares = calculateFurudh(finalHeirs, hasChildren, facts, pewarisId, tanggalWarisan)
+  const furudhShares = calculateFurudh(finalHeirs, facts, pewarisId, tanggalWarisan)
   const totalFurudh = calculateTotalFurudh(furudhShares)
   steps.push({
     langkah: 'Hitung Furudh',
     detail: `Total furudh: ${totalFurudh.numerator}/${totalFurudh.denominator}`,
   })
 
-  const ashabahShares = calculateAshabah(finalHeirs, totalFurudh, totalHarta, facts, pewarisId)
+  const ashabahShares = calculateAshabah(finalHeirs, totalFurudh, totalHarta, facts, pewarisId, tanggalWarisan)
   steps.push({
     langkah: 'Hitung Ashabah',
     detail: `${ashabahShares.length} ahli waris ashabah`,

@@ -82,7 +82,6 @@ Dokumen ini menjadi dasar pembuatan calculation engine. Setiap baris harus bisa 
 ### 3.1 Mahjub oleh Anak Laki-laki
 | Yang Terhalang | Alasan |
 |---------------|--------|
-| Anak perempuan | Terhalang oleh anak laki-laki yang lebih dekat |
 | Cucu perempuan dari anak laki-laki | Terhalang oleh anak laki-laki |
 | Saudara kandung laki-laki | Terhalang oleh anak laki-laki |
 | Saudara kandung perempuan | Terhalang oleh anak laki-laki |
@@ -92,6 +91,8 @@ Dokumen ini menjadi dasar pembuatan calculation engine. Setiap baris harus bisa 
 | Nenek (ibu dari ayah) | Terhalang oleh anak laki-laki |
 | Nenek (ayah dari ibu) | Terhalang oleh anak laki-laki |
 | Nenek (ibu dari ibu) | Terhalang oleh anak laki-laki |
+
+**Catatan:** **Anak perempuan tidak mahjub oleh anak laki-laki** — keduanya menerima bagian melalui ashabah dengan rasio 2:1 (laki-laki:perempuan).
 
 ### 3.2 Mahjub oleh Anak Perempuan
 | Yang Terhalang | Alasan |

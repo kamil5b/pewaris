@@ -8,17 +8,18 @@ Berdasarkan REVISION.md, berikut rencana perubahan yang perlu dilakukan.
 
 | Komponen | Status | Catatan |
 |----------|--------|---------|
-| Domain model (Anggota) | Sudah benar | Sudah punya `tanggalLahir`, `tanggalKematian` di Anggota |
-| Domain model (HubunganVertical) | Masih punya `tanggalLahir` | Seharusnya tidak perlu, tanggal lahir sudah di Anggota |
-| `relationship.ts` | Berfungsi | Traverse graph untuk cari spouse, children, parents, siblings |
-| `candidates.ts` | Sederhana | Hanya cari spouse + children + cucu pengganti |
-| `eligibility.ts` | Sederhana | Hanya cek apakah hidup (tanggalKematian) |
-| `mahjub.ts` | **Kosong (stub)** | Selalu return `[]` — belum ada blocking rules |
-| `furudh.ts` | Sebagian | Hanya hitung spouse (1/4 atau 1/2) |
-| `ashabah.ts` | Sebagian | Hanya hitung anak (2:1) |
-| `awl.ts` | Berfungsi | Proporsional reduction |
-| `radd.ts` | Sebagian | Hanya return ke furudh non-spouse |
-| `calculate.ts` | Sebagian | Pipeline sederhana |
+| Domain model (Anggota) | ✅ Selesai | Sudah punya `tanggalLahir`, `tanggalKematian` di Anggota |
+| Domain model (HubunganVertical) | ✅ Selesai | `tanggalLahir` dihapus; sudah pakai `isNasabAyah`, `isAdopted` |
+| `relationship.ts` | ✅ Selesai | `findSpouses` (poligami), siblings kandung/seayah/seibu, kakek, nenek, paman, cucu pengganti |
+| `candidates.ts` | ✅ Selesai | Resolve semua kandidat KHI + filter nasab (isAdopted, isNasabAyah) |
+| `eligibility.ts` | ✅ Selesai | Cek lahir sebelum tanggal warisan + hidup saat pewaris meninggal |
+| `mahjub.ts` | ✅ Selesai | Aturan Pasal 186: cucu, saudara, kakek, nenek, saudara seibu |
+| `furudh.ts` | ✅ Selesai | Semua furudh (Pasal 174-184) + poligami (istri dibagi proporsional) |
+| `ashabah.ts` | ✅ Selesai | Urutan prioritas: anak → cucu → saudara kandung → seayah → paman; 2:1 |
+| `awl.ts` | ✅ Berfungsi | Proporsional reduction |
+| `radd.ts` | ✅ Berfungsi | Return ke furudh non-spouse |
+| `calculate.ts` | ✅ Selesai | Pipeline lengkap dengan deriveHubungan spesifik |
+| Tests | ✅ 36 pass | Skenario dasar, poligami, radd, Pasal 185, anak angkat, utan sah |
 
 ---
 
