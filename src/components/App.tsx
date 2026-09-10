@@ -4,6 +4,7 @@ import { AddAnggotaModal } from './canvas/AddAnggotaModal'
 import { HartaPanel } from './harta/HartaPanel'
 import { ResultsPanel } from './results/ResultsPanel'
 import { Modal } from './ui/Modal'
+import { TutorialModal } from './ui/TutorialModal'
 import { useCanvasStore } from '../store/canvas-store'
 import { useFamilyStore } from '../store/family-store'
 import { useAssetStore } from '../store/asset-store'
@@ -20,6 +21,7 @@ export default function App() {
   const [activePanel, setActivePanel] = useState<Panel>('results')
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isClearModalOpen, setIsClearModalOpen] = useState(false)
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false)
 
   const zoom = useCanvasStore((s) => s.zoom)
   const setZoom = useCanvasStore((s) => s.setZoom)
@@ -94,6 +96,13 @@ export default function App() {
             className="px-3 py-1.5 rounded-lg text-sm font-medium bg-green-100 text-green-700 hover:bg-green-200"
           >
             + Anggota
+          </button>
+
+          <button
+            onClick={() => setIsTutorialOpen(true)}
+            className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-600 hover:bg-gray-200"
+          >
+            📖 Tutorial
           </button>
 
           <button
@@ -174,6 +183,11 @@ export default function App() {
           </button>
         </div>
       </Modal>
+
+      <TutorialModal
+        isOpen={isTutorialOpen}
+        onClose={() => setIsTutorialOpen(false)}
+      />
     </div>
   )
 }

@@ -5,9 +5,10 @@ type ModalProps = {
   onClose: () => void
   title: string
   children: React.ReactNode
+  wide?: boolean
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, wide = false }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -25,7 +26,9 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
     <dialog
       ref={dialogRef}
       onClose={onClose}
-      className="backdrop:bg-black/50 fixed inset-0 m-auto rounded-lg shadow-xl border p-0 w-96"
+      className={`backdrop:bg-black/50 fixed inset-0 m-auto rounded-lg shadow-xl border p-0 ${
+        wide ? 'w-[40rem]' : 'w-96'
+      }`}
     >
       <div className="p-4">
         <div className="flex items-center justify-between mb-4">
